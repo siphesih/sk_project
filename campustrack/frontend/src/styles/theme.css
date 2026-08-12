@@ -1,0 +1,197 @@
+/* CampusTrack theme — maps the reference design's colour palette onto
+   Bootstrap 5 CSS variables so the rest of the app can use plain
+   Bootstrap utility classes (bg-primary, text-accent, btn-primary, ...). */
+
+:root {
+  --ct-primary: #2f4a86;
+  --ct-primary-dark: #223a6d;
+  --ct-accent: #1ea973;
+  --ct-accent-dark: #178457;
+  --ct-danger: #d6493b;
+  --ct-warning: #e2883a;
+  --ct-bg: #f6f7fb;
+  --ct-card: #ffffff;
+  --ct-muted-bg: #eef0f6;
+  --ct-border: #e1e4ec;
+  --ct-text: #1b2233;
+  --ct-text-muted: #667085;
+  --ct-sidebar: #1c2b4a;
+  --ct-sidebar-hover: #253a63;
+
+  --bs-primary: var(--ct-primary);
+  --bs-primary-rgb: 47, 74, 134;
+  --bs-success: var(--ct-accent);
+  --bs-success-rgb: 30, 169, 115;
+  --bs-danger: var(--ct-danger);
+  --bs-danger-rgb: 214, 73, 59;
+  --bs-warning: var(--ct-warning);
+  --bs-warning-rgb: 226, 136, 58;
+  --bs-body-bg: var(--ct-bg);
+  --bs-body-color: var(--ct-text);
+  --bs-border-color: var(--ct-border);
+  --bs-border-radius: 0.65rem;
+  --bs-border-radius-lg: 0.9rem;
+  --bs-border-radius-sm: 0.45rem;
+  --bs-font-sans-serif: "Inter", "Segoe UI", system-ui, -apple-system, sans-serif;
+}
+
+body {
+  background: var(--ct-bg);
+  color: var(--ct-text);
+}
+
+a {
+  color: var(--ct-primary);
+}
+
+/* ---------- App shell (top bar + side nav) ---------- */
+
+.ct-topbar {
+  background: var(--ct-card);
+  border-bottom: 1px solid var(--ct-border);
+  height: 64px;
+}
+
+.ct-brand-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  background: var(--ct-primary);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+}
+
+.ct-sidebar {
+  background: var(--ct-sidebar);
+  min-height: calc(100vh - 64px);
+  width: 240px;
+  flex-shrink: 0;
+}
+
+.ct-sidebar .nav-link {
+  color: #c6cfe3;
+  border-radius: 0.55rem;
+  padding: 0.6rem 0.9rem;
+  margin: 0.15rem 0.6rem;
+  font-size: 0.92rem;
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+}
+
+.ct-sidebar .nav-link:hover {
+  background: var(--ct-sidebar-hover);
+  color: #fff;
+}
+
+.ct-sidebar .nav-link.active {
+  background: var(--ct-primary);
+  color: #fff;
+  font-weight: 600;
+}
+
+.ct-main {
+  flex: 1;
+  min-width: 0;
+}
+
+/* ---------- Cards & misc ---------- */
+
+.card {
+  border: 1px solid var(--ct-border);
+  box-shadow: 0 1px 2px rgba(16, 24, 40, 0.04);
+}
+
+.ct-stat-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.ct-risk-low { color: var(--ct-accent); }
+.ct-risk-medium { color: var(--ct-warning); }
+.ct-risk-high { color: var(--ct-danger); }
+
+.ct-risk-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.3rem 0.75rem;
+  border-radius: 999px;
+  font-weight: 600;
+  font-size: 0.85rem;
+}
+.ct-risk-badge.low { background: rgba(30, 169, 115, 0.12); color: var(--ct-accent); }
+.ct-risk-badge.medium { background: rgba(226, 136, 58, 0.14); color: var(--ct-warning); }
+.ct-risk-badge.high { background: rgba(214, 73, 59, 0.12); color: var(--ct-danger); }
+
+.ct-rating-btn {
+  width: 38px;
+  height: 38px;
+  border-radius: 8px;
+  border: 1px solid var(--ct-border);
+  background: #fff;
+  font-weight: 600;
+  color: var(--ct-text-muted);
+}
+.ct-rating-btn.selected {
+  background: var(--ct-primary);
+  border-color: var(--ct-primary);
+  color: #fff;
+}
+
+.ct-chat-bubble {
+  max-width: 80%;
+  padding: 0.65rem 1rem;
+  border-radius: 1rem;
+  font-size: 0.92rem;
+  white-space: pre-line;
+}
+.ct-chat-bubble.assistant {
+  background: var(--ct-muted-bg);
+  border-bottom-left-radius: 0.3rem;
+}
+.ct-chat-bubble.user {
+  background: var(--ct-primary);
+  color: #fff;
+  border-bottom-right-radius: 0.3rem;
+}
+
+.ct-code-display {
+  font-family: "SFMono-Regular", Consolas, monospace;
+  font-size: 2.2rem;
+  letter-spacing: 0.35rem;
+  font-weight: 700;
+  color: var(--ct-primary);
+}
+
+.btn-primary {
+  background: var(--ct-primary);
+  border-color: var(--ct-primary);
+}
+.btn-primary:hover, .btn-primary:focus {
+  background: var(--ct-primary-dark);
+  border-color: var(--ct-primary-dark);
+}
+.btn-success {
+  background: var(--ct-accent);
+  border-color: var(--ct-accent);
+}
+.btn-success:hover {
+  background: var(--ct-accent-dark);
+  border-color: var(--ct-accent-dark);
+}
+
+.ct-auth-hero {
+  background: linear-gradient(180deg, rgba(47,74,134,0.06), rgba(47,74,134,0.02));
+}
+
+@media (max-width: 900px) {
+  .ct-sidebar { display: none; }
+}
