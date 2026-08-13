@@ -620,6 +620,216 @@ app.get("/api/modules", async (req, res) => {
 
 })
 
+
+// =========================================================
+// ADMIN - GET USERS
+// Combines students and staff
+// =========================================================
+
+app.get("/api/admin/users", async (req, res) => {
+
+    try {
+
+        // Get students
+        const [students] = await pool.execute(
+            `
+            SELECT
+                id,
+                name,
+                email,
+                student_number,
+                NULL AS staff_number,
+                'student' AS role,
+                faculty,
+                department,
+                year,
+                NULL AS title,
+                status
+            FROM students
+            ORDER BY name
+            `
+        )
+
+        // Get staff
+        const [staff] = await pool.execute(
+            `
+            SELECT
+                id,
+                name,
+                NULL AS email,
+                NULL AS student_number,
+                staff_number,
+                role,
+                faculty,
+                department,
+                NULL AS year,
+                title,
+                status
+            FROM staff
+            ORDER BY name
+            `
+        )
+
+        // Combine both tables
+        const users = [
+            ...students,
+            ...staff
+        ]
+
+        res.json(users)
+
+    } catch (error) {
+
+        console.error("ADMIN USERS ERROR:")
+        console.error(error)
+
+        res.status(500).json({
+            message: "Failed to load users."
+        })
+    }
+
+})
+
+
+// =========================================================
+// ADMIN - GET MODULES
+// =========================================================
+
+app.get("/api/admin/modules", async (req, res) => {
+
+    try {
+
+        const [rows] = await pool.execute(
+            `
+            SELECT *
+            FROM modules
+            ORDER BY code
+            `
+        )
+
+        res.json(rows)
+
+    } catch (error) {
+
+        console.error("ADMIN MODULES ERROR:")
+        console.error(error)
+
+        res.status(500).json({
+            message: "Failed to load modules."
+        })
+    }
+
+})
+
+
+
+// =========================================================
+// ADMIN - CREATE MODULE
+// =========================================================
+
+app.post("/api/admin/modules", async (req, res) => {
+
+    try {
+
+        const {
+            code,
+            name,
+            period,
+            lecturerId,
+            userId
+        } = req.body
+
+        // =========================================
+        // VALIDATION
+        // =========================================
+
+        if (!code) {
+
+            return res.status(400).json({
+                message: "Module code is required."
+            })
+        }
+
+        if (!name) {
+
+            return res.status(400).json({
+                message: "Module name is required."
+            })
+        }
+
+        if (!period) {
+
+            return res.status(400).json({
+                message: "Academic period is required."
+            })
+        }
+
+        // =========================================
+        // CHECK IF MODULE ALREADY EXISTS
+        // =========================================
+
+        const [existing] = await pool.execute(
+            `
+            SELECT id
+            FROM modules
+            WHERE code = ?
+            LIMIT 1
+            `,
+            [code.trim()]
+        )
+
+        if (existing.length > 0) {
+
+            return res.status(409).json({
+                message: "A module with this code already exists."
+            })
+        }
+
+        // =========================================
+        // CREATE MODULE
+        // =========================================
+
+        const [result] = await pool.execute(
+            `
+            INSERT INTO modules
+            (
+                code,
+                name,
+                period,
+                lecturer_id
+            )
+            VALUES (?, ?, ?, ?)
+            `,
+            [
+                code.trim().toUpperCase(),
+                name.trim(),
+                period,
+                lecturerId || null
+            ]
+        )
+
+        // =========================================
+        // RESPONSE
+        // =========================================
+
+        res.status(201).json({
+            message: "Module created successfully.",
+            moduleId: result.insertId
+        })
+
+    } catch (error) {
+
+        console.error("CREATE MODULE ERROR:")
+        console.error(error)
+
+        res.status(500).json({
+            message: "Failed to create module."
+        })
+    }
+
+})
+
+
 // =========================================================
 // START SERVER
 // =========================================================

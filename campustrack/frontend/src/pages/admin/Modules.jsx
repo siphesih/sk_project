@@ -20,11 +20,20 @@ export default function Modules() {
   const [form, setForm] = useState({ code: "", name: "", period: "First Semester", lecturerId: "" })
   const [error, setError] = useState("")
 
-  const load = () => fetchJson(`/api/admin/modules?userId=${auth.user.id}`).then(setModules)
-  useEffect(() => {
-    load()
-    fetchJson(`/api/admin/users?userId=${auth.user.id}`).then((u) => setLecturers(u.filter((x) => x.role === "lecturer")))
-  }, [])
+const load = () =>
+  fetchJson(`/api/admin/modules?userId=${auth.user.id}`)
+    .then(setModules)
+
+useEffect(() => {
+  load()
+
+  fetchJson("/api/lecturers")
+    .then(setLecturers)
+    .catch((err) => {
+      console.error("Failed to load lecturers:", err)
+      setError("Failed to load lecturers.")
+    })
+}, [])
 
   const submit = async (e) => {
     e.preventDefault()
