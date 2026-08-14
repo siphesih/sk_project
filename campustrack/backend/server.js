@@ -2,6 +2,7 @@ const express = require("express")
 const mysql = require("mysql2/promise")
 const cors = require("cors")
 const session = require("express-session")
+const crypto = require("crypto")
 
 const app = express()
 
@@ -71,6 +72,22 @@ async function testDatabase() {
 
         process.exit(1)
     }
+}
+
+// =========================================================
+// ADMIN GUARD
+// =========================================================
+
+function requireAdmin(req, res, next) {
+
+    if (!req.session.userId || req.session.role !== "admin") {
+
+        return res.status(401).json({
+            message: "Not authorized."
+        })
+    }
+
+    next()
 }
 
 // =========================================================
@@ -600,9 +617,12 @@ app.get("/api/modules", async (req, res) => {
 
         const [rows] = await pool.execute(
             `
-            SELECT *
-            FROM modules
-            ORDER BY code
+            SELECT m.*, ml.lecturer_id
+            FROM modules m
+            LEFT JOIN module_lecturers ml
+                ON ml.module_id = m.id
+                AND ml.is_primary = 1
+            ORDER BY m.code
             `
         )
 
@@ -618,6 +638,42 @@ app.get("/api/modules", async (req, res) => {
         })
     }
 
+})
+
+
+// =========================================================
+// ADMIN - OVERVIEW (dashboard counts)
+// =========================================================
+
+app.get("/api/admin/overview", async (req, res) => {
+
+    try {
+
+        const [[{ students }]] = await pool.execute(
+            `SELECT COUNT(*) AS students FROM students`
+        )
+
+        const [[{ lecturers }]] = await pool.execute(
+            `SELECT COUNT(*) AS lecturers FROM staff WHERE role = 'lecturer'`
+        )
+
+        const [[{ modules }]] = await pool.execute(
+            `SELECT COUNT(*) AS modules FROM modules`
+        )
+
+        res.json({
+            counts: {
+                students,
+                lecturers,
+                modules
+            }
+        })
+
+    } catch (error) {
+        console.error("ADMIN OVERVIEW ERROR:")
+        console.error(error)
+        res.status(500).json({ message: "Failed to load overview." })
+    }
 })
 
 
@@ -701,9 +757,12 @@ app.get("/api/admin/modules", async (req, res) => {
 
         const [rows] = await pool.execute(
             `
-            SELECT *
-            FROM modules
-            ORDER BY code
+            SELECT m.*, ml.lecturer_id
+            FROM modules m
+            LEFT JOIN module_lecturers ml
+                ON ml.module_id = m.id
+                AND ml.is_primary = 1
+            ORDER BY m.code
             `
         )
 
@@ -731,100 +790,60 @@ app.post("/api/admin/modules", async (req, res) => {
 
     try {
 
-        const {
-            code,
-            name,
-            period,
-            lecturerId,
-            userId
-        } = req.body
+        const { code, name, period, lecturerId, userId } = req.body
 
-        // =========================================
-        // VALIDATION
-        // =========================================
-
-        if (!code) {
-
-            return res.status(400).json({
-                message: "Module code is required."
-            })
-        }
-
-        if (!name) {
-
-            return res.status(400).json({
-                message: "Module name is required."
-            })
-        }
-
-        if (!period) {
-
-            return res.status(400).json({
-                message: "Academic period is required."
-            })
-        }
-
-        // =========================================
-        // CHECK IF MODULE ALREADY EXISTS
-        // =========================================
+        if (!code)   return res.status(400).json({ message: "Module code is required." })
+        if (!name)   return res.status(400).json({ message: "Module name is required." })
+        if (!period) return res.status(400).json({ message: "Academic period is required." })
 
         const [existing] = await pool.execute(
-            `
-            SELECT id
-            FROM modules
-            WHERE code = ?
-            LIMIT 1
-            `,
+            `SELECT id FROM modules WHERE code = ? LIMIT 1`,
             [code.trim()]
         )
 
         if (existing.length > 0) {
-
-            return res.status(409).json({
-                message: "A module with this code already exists."
-            })
+            return res.status(409).json({ message: "A module with this code already exists." })
         }
 
-        // =========================================
-        // CREATE MODULE
-        // =========================================
+        // Generate the primary key yourself — modules.id has no default/auto-increment
+        const moduleId = crypto.randomUUID()
 
-        const [result] = await pool.execute(
+        await pool.execute(
             `
             INSERT INTO modules
-            (
-                code,
-                name,
-                period,
-                lecturer_id
-            )
-            VALUES (?, ?, ?, ?)
+            (id, code, name, period, created_by)
+            VALUES (?, ?, ?, ?, ?)
             `,
             [
+                moduleId,
                 code.trim().toUpperCase(),
                 name.trim(),
                 period,
-                lecturerId || null
+                userId || null
             ]
         )
 
-        // =========================================
-        // RESPONSE
-        // =========================================
+        // Lecturer assignment goes in module_lecturers, not modules.lecturer_id
+        if (lecturerId) {
+            await pool.execute(
+                `
+                INSERT INTO module_lecturers
+                (id, module_id, lecturer_id, is_primary, assigned_by)
+                VALUES (?, ?, ?, 1, ?)
+                `,
+                [crypto.randomUUID(), moduleId, lecturerId, userId || null]
+            )
+        }
 
         res.status(201).json({
             message: "Module created successfully.",
-            moduleId: result.insertId
+            moduleId
         })
 
     } catch (error) {
-
         console.error("CREATE MODULE ERROR:")
         console.error(error)
-
-        res.status(500).json({
-            message: "Failed to create module."
-        })
+        res.status(500).json({ message: "Failed to create module." })
     }
 
 })

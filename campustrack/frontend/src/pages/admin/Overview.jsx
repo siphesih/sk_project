@@ -17,9 +17,15 @@ const fetchJson = async (path, { method = "GET", body } = {}) => {
 export default function Overview() {
   const { auth } = useAuth()
   const [counts, setCounts] = useState(null)
+  const [error, setError] = useState("")
 
   useEffect(() => {
-    fetchJson(`/api/admin/overview?userId=${auth.user.id}`).then((d) => setCounts(d.counts))
+    fetchJson(`/api/admin/overview?userId=${auth.user.id}`)
+      .then((d) => setCounts(d.counts))
+      .catch((err) => {
+        console.error("Failed to load overview:", err)
+        setError("Failed to load dashboard counts.")
+      })
   }, [])
 
   const cards = [
@@ -32,6 +38,8 @@ export default function Overview() {
     <div>
       <h4 className="fw-bold mb-1">Welcome back, {auth.user.name}.</h4>
       <p className="text-muted mb-4">Set up lecturers, students and modules for the pilot.</p>
+
+      {error && <div className="alert alert-danger mb-4">{error}</div>}
 
       <div className="row g-4">
         {cards.map((c) => (

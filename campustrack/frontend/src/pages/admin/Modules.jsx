@@ -102,7 +102,7 @@ useEffect(() => {
                       <td className="ps-4 fw-semibold">{m.code}</td>
                       <td>{m.name}</td>
                       <td className="text-muted small">{m.period}</td>
-                      <td className="pe-4 text-muted small">{lecturers.find((l) => l.id === m.lecturerId)?.name || "—"}</td>
+                      <td className="pe-4 text-muted small">{lecturers.find((l) => l.id === m.lecturer_id)?.name || "—"}</td>
                     </tr>
                   ))}
                 </tbody>
