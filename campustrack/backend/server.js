@@ -1050,6 +1050,172 @@ app.delete("/api/admin/enrolments/:id", async (req, res) => {
             [id]
         )
 
+
+        // =========================================================
+        // ADMIN - GET COURSES
+        // =========================================================
+
+        app.get("/api/admin/courses", async (req, res) => {
+
+            try {
+
+                const [rows] = await pool.execute(
+                    `SELECT * FROM courses ORDER BY code`
+                )
+
+                res.json(rows)
+
+            } catch (error) {
+                console.error("ADMIN COURSES ERROR:")
+                console.error(error)
+                res.status(500).json({ message: "Failed to load courses." })
+            }
+        })
+
+
+        // =========================================================
+        // ADMIN - CREATE COURSE
+        // =========================================================
+
+        app.post("/api/admin/courses", async (req, res) => {
+
+            try {
+
+                const { code, name, faculty, department, durationYears } = req.body
+
+                if (!code || !code.trim()) return res.status(400).json({ message: "Course code is required." })
+                if (!name || !name.trim()) return res.status(400).json({ message: "Course name is required." })
+
+                const normalizedCode = code.trim().toUpperCase()
+                const [existing] = await pool.execute(
+                    `SELECT id FROM courses WHERE code = ? LIMIT 1`,
+                    [normalizedCode]
+                )
+
+                if (existing.length > 0) {
+                    return res.status(409).json({ message: "A course with this code already exists." })
+                }
+
+                const courseId = crypto.randomUUID()
+                const parsedDuration = Number(durationYears)
+                const courseDuration = Number.isInteger(parsedDuration) && parsedDuration > 0 ? parsedDuration : 3
+
+                await pool.execute(
+                    `
+                    INSERT INTO courses (id, code, name, faculty, department, duration_years)
+                    VALUES (?, ?, ?, ?, ?, ?)
+                    `,
+                    [courseId, normalizedCode, name.trim(), faculty?.trim() || null, department?.trim() || null, courseDuration]
+                )
+
+                res.status(201).json({ message: "Course created successfully.", courseId })
+
+            } catch (error) {
+                console.error("CREATE COURSE ERROR:")
+                console.error(error)
+                res.status(500).json({ message: "Failed to create course." })
+            }
+        })
+
+
+        // =========================================================
+        // ADMIN - GET MODULES FOR A COURSE
+        // =========================================================
+
+        app.get("/api/admin/courses/:courseId/modules", async (req, res) => {
+
+            try {
+
+                const [rows] = await pool.execute(
+                    `
+                    SELECT
+                        cm.id,
+                        cm.year_level,
+                        m.id AS moduleId,
+                        m.code AS moduleCode,
+                        m.name AS moduleName
+                    FROM course_modules cm
+                    JOIN modules m ON m.id = cm.module_id
+                    WHERE cm.course_id = ?
+                    ORDER BY cm.year_level, m.code
+                    `,
+                    [req.params.courseId]
+                )
+
+                res.json(rows)
+
+            } catch (error) {
+                console.error("COURSE MODULES ERROR:")
+                console.error(error)
+                res.status(500).json({ message: "Failed to load course modules." })
+            }
+        })
+
+
+        // =========================================================
+        // ADMIN - ADD MODULE TO COURSE
+        // =========================================================
+
+        app.post("/api/admin/courses/:courseId/modules", async (req, res) => {
+
+            try {
+
+                const { moduleId, yearLevel } = req.body
+                const parsedYear = Number(yearLevel)
+
+                if (!moduleId) return res.status(400).json({ message: "Module is required." })
+                if (!Number.isInteger(parsedYear) || parsedYear < 1) {
+                    return res.status(400).json({ message: "Year level is required." })
+                }
+
+                const [existing] = await pool.execute(
+                    `SELECT id FROM course_modules WHERE course_id = ? AND module_id = ? LIMIT 1`,
+                    [req.params.courseId, moduleId]
+                )
+
+                if (existing.length > 0) {
+                    return res.status(409).json({ message: "This module is already part of the course." })
+                }
+
+                await pool.execute(
+                    `
+                    INSERT INTO course_modules (id, course_id, module_id, year_level)
+                    VALUES (?, ?, ?, ?)
+                    `,
+                    [crypto.randomUUID(), req.params.courseId, moduleId, parsedYear]
+                )
+
+                res.status(201).json({ message: "Module added to course." })
+
+            } catch (error) {
+                console.error("ADD COURSE MODULE ERROR:")
+                console.error(error)
+                res.status(500).json({ message: "Failed to add module to course." })
+            }
+        })
+
+
+        // =========================================================
+        // ADMIN - REMOVE MODULE FROM COURSE
+        // =========================================================
+
+        app.delete("/api/admin/courses/:courseId/modules/:linkId", async (req, res) => {
+
+            try {
+
+                await pool.execute(
+                    `DELETE FROM course_modules WHERE id = ? AND course_id = ?`,
+                    [req.params.linkId, req.params.courseId]
+                )
+
+                res.json({ message: "Module removed from course." })
+
+            } catch (error) {
+                console.error("REMOVE COURSE MODULE ERROR:")
+                console.error(error)
+                res.status(500).json({ message: "Failed to remove module from course." })
+            }
+        })
         res.json({ message: "Student removed from module." })
 
     } catch (error) {
