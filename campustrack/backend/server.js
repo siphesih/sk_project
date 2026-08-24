@@ -706,6 +706,7 @@ app.get("/api/admin/users", async (req, res) => {
             `
         )
 
+
         // Get staff
         const [staff] = await pool.execute(
             `
@@ -741,6 +742,113 @@ app.get("/api/admin/users", async (req, res) => {
 
         res.status(500).json({
             message: "Failed to load users."
+        })
+    }
+
+})
+
+
+// =========================================================
+// ADMIN - CREATE USER
+// =========================================================
+
+app.post("/api/admin/users", async (req, res) => {
+
+    try {
+
+        const {
+            role,
+            name,
+            email,
+            studentNumber,
+            password
+        } = req.body
+
+        if (!role) {
+            return res.status(400).json({ message: "Role is required." })
+        }
+
+        if (!name || !name.trim()) {
+            return res.status(400).json({ message: "Name is required." })
+        }
+
+        if (!password) {
+            return res.status(400).json({ message: "Password is required." })
+        }
+
+        const newId = crypto.randomUUID()
+
+        if (role === "student") {
+
+            if (!studentNumber || !studentNumber.trim()) {
+                return res.status(400).json({ message: "Student number is required." })
+            }
+
+            const normalizedStudentNumber = studentNumber.trim()
+            const [existing] = await pool.execute(
+                `SELECT id FROM students WHERE student_number = ? LIMIT 1`,
+                [normalizedStudentNumber]
+            )
+
+            if (existing.length > 0) {
+                return res.status(409).json({ message: "A student with this number already exists." })
+            }
+
+            await pool.execute(
+                `
+                INSERT INTO students
+                (id, student_number, name, password, email)
+                VALUES (?, ?, ?, ?, ?)
+                `,
+                [newId, normalizedStudentNumber, name.trim(), password, email ? email.trim() : null]
+            )
+        }
+
+        else if (role === "lecturer" || role === "admin") {
+
+            if (!email || !email.trim()) {
+                return res.status(400).json({ message: "Email is required." })
+            }
+
+            const normalizedEmail = email.trim()
+
+            const [existing] = await pool.execute(
+                `SELECT id FROM staff WHERE email = ? LIMIT 1`,
+                [normalizedEmail]
+            )
+
+            if (existing.length > 0) {
+                return res.status(409).json({ message: "A staff member with this email already exists." })
+            }
+
+            const staffNumber = `STF-${Date.now()}`
+
+            await pool.execute(
+                `
+                INSERT INTO staff
+                (id, staff_number, name, email, password, role)
+                VALUES (?, ?, ?, ?, ?, ?)
+                `,
+                [newId, staffNumber, name.trim(), normalizedEmail, password, role]
+            )
+        }
+
+        else {
+            return res.status(400).json({ message: "Unknown role." })
+        }
+
+        res.status(201).json({
+            message: "User added successfully.",
+            userId: newId
+        })
+
+    } catch (error) {
+
+        console.error("CREATE USER ERROR:")
+        console.error(error)
+
+        res.status(500).json({
+            message: "Failed to add user."
         })
     }
 
@@ -846,6 +954,109 @@ app.post("/api/admin/modules", async (req, res) => {
         res.status(500).json({ message: "Failed to create module." })
     }
 
+})
+
+
+// =========================================================
+// ADMIN - GET ENROLMENTS
+// =========================================================
+
+app.get("/api/admin/enrolments", async (req, res) => {
+
+    try {
+
+        const [rows] = await pool.execute(
+            `
+            SELECT
+                e.id,
+                e.student_id,
+                s.name AS studentName,
+                s.student_number AS studentNumber,
+                e.module_id,
+                m.code AS moduleCode,
+                m.name AS moduleName,
+                e.status,
+                e.enrollment_date
+            FROM enrolments e
+            JOIN students s ON s.id = e.student_id
+            JOIN modules m ON m.id = e.module_id
+            WHERE e.status = 'active'
+            ORDER BY s.name, m.code
+            `
+        )
+
+        res.json(rows)
+
+    } catch (error) {
+        console.error("ADMIN ENROLMENTS ERROR:")
+        console.error(error)
+        res.status(500).json({ message: "Failed to load enrolments." })
+    }
+})
+
+
+// =========================================================
+// ADMIN - CREATE ENROLMENT
+// =========================================================
+
+app.post("/api/admin/enrolments", async (req, res) => {
+
+    try {
+
+        const { studentId, moduleId } = req.body
+
+        if (!studentId) return res.status(400).json({ message: "Student is required." })
+        if (!moduleId) return res.status(400).json({ message: "Module is required." })
+
+        const [existing] = await pool.execute(
+            `SELECT id FROM enrolments WHERE student_id = ? AND module_id = ? AND status = 'active' LIMIT 1`,
+            [studentId, moduleId]
+        )
+
+        if (existing.length > 0) {
+            return res.status(409).json({ message: "This student is already enrolled in that module." })
+        }
+
+        await pool.execute(
+            `
+            INSERT INTO enrolments (student_id, module_id)
+            VALUES (?, ?)
+            `,
+            [studentId, moduleId]
+        )
+
+        res.status(201).json({ message: "Student enrolled successfully." })
+
+    } catch (error) {
+        console.error("CREATE ENROLMENT ERROR:")
+        console.error(error)
+        res.status(500).json({ message: "Failed to enrol student." })
+    }
+})
+
+
+// =========================================================
+// ADMIN - REMOVE ENROLMENT
+// =========================================================
+
+app.delete("/api/admin/enrolments/:id", async (req, res) => {
+
+    try {
+
+        const { id } = req.params
+
+        await pool.execute(
+            `UPDATE enrolments SET status = 'dropped' WHERE id = ?`,
+            [id]
+        )
+
+        res.json({ message: "Student removed from module." })
+
+    } catch (error) {
+        console.error("DELETE ENROLMENT ERROR:")
+        console.error(error)
+        res.status(500).json({ message: "Failed to remove enrolment." })
+    }
 })
 
 

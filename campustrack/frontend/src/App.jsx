@@ -26,6 +26,7 @@ import AdminLayout from "./pages/admin/AdminLayout.jsx"
 import AdminOverview from "./pages/admin/Overview.jsx"
 import AdminUsers from "./pages/admin/Users.jsx"
 import AdminModules from "./pages/admin/Modules.jsx"
+import AdminEnrolments from "./pages/admin/Enrolments.jsx"
 
 export default function App() {
   return (
@@ -56,6 +57,7 @@ export default function App() {
         <Route index element={<AdminOverview />} />
         <Route path="users" element={<AdminUsers />} />
         <Route path="modules" element={<AdminModules />} />
+        <Route path="enrolments" element={<AdminEnrolments />} />
       </Route>
 
       <Route path="*" element={<Navigate to="/" replace />} />
