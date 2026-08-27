@@ -93,7 +93,7 @@ export default function Users() {
                     <tr key={u.id}>
                       <td className="ps-4">{u.name}</td>
                       <td className="text-capitalize">{u.role}</td>
-                      <td className="pe-4 text-muted small">{u.email || u.studentNumber}</td>
+                      <td className="pe-4 text-muted small">{u.email || u.student_number}</td>
                     </tr>
                   ))}
                 </tbody>
