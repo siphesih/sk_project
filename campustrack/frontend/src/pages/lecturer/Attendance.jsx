@@ -76,7 +76,20 @@ export default function Attendance() {
   }
 
   useEffect(() => {
-    if (sessionId) loadAttendance()
+    if (!sessionId) return
+
+    const selected = sessions.find((s) => s.id === sessionId)
+
+    if (selected?.code && selected.expiresAt && new Date(selected.expiresAt) > new Date()) {
+      setCodeInfo({
+        code: selected.code,
+        expiresAt: new Date(selected.expiresAt).getTime(),
+      })
+    } else {
+      setCodeInfo(null)
+    }
+
+    loadAttendance()
   }, [sessionId])
 
   return (

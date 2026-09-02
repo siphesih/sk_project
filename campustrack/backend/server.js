@@ -1470,8 +1470,8 @@ app.get("/api/student/overview", async (req, res) => {
             [userId]
         )
 
-        const understanding = ratingRow.avgRating ? Number(ratingRow.avgRating.toFixed(1)) : null
-        const avgMark = markRow.avgMark ? Math.round(markRow.avgMark) : null
+        const understanding = ratingRow.avgRating ? Number(Number(ratingRow.avgRating).toFixed(1)) : null
+        const avgMark = markRow.avgMark ? Math.round(Number(markRow.avgMark)) : null
 
         // Simple explainable risk score out of 100
         const score = Math.round(
@@ -1593,8 +1593,8 @@ app.get("/api/lecturer/modules/:moduleCode/roster", async (req, res) => {
             )
 
             const attendance = attendanceRate ?? 100
-            const understanding = ratingRow.avgRating ? Number(ratingRow.avgRating.toFixed(1)) : null
-            const avgMark = markRow.avgMark ? Math.round(markRow.avgMark) : null
+            const understanding = ratingRow.avgRating ? Number(Number(ratingRow.avgRating).toFixed(1)) : null
+            const avgMark = markRow.avgMark ? Math.round(Number(markRow.avgMark)) : null
 
             const score = Math.round(
                 (attendance * 0.4) +
@@ -1683,7 +1683,12 @@ app.get("/api/lecturer/modules/:moduleCode/sessions", async (req, res) => {
 
         const [rows] = await pool.execute(
             `
-            SELECT id, session_date AS date, topic
+            SELECT
+                id,
+                session_date AS date,
+                topic,
+                attendance_code AS code,
+                code_expires_at AS expiresAt
             FROM sessions
             WHERE module_id = ?
             ORDER BY session_date DESC
@@ -1874,6 +1879,80 @@ app.post("/api/lecturer/results", async (req, res) => {
         console.error("SAVE RESULT ERROR:")
         console.error(error)
         res.status(500).json({ message: "Failed to save result." })
+    }
+})
+
+// =========================================================
+// LECTURER - BULK UPLOAD RESULTS (from spreadsheet)
+// =========================================================
+
+app.post("/api/lecturer/results/bulk", async (req, res) => {
+    try {
+        const { moduleCode, rows } = req.body
+
+        if (!moduleCode) return res.status(400).json({ message: "Module is required." })
+        if (!Array.isArray(rows) || rows.length === 0) {
+            return res.status(400).json({ message: "No rows to upload." })
+        }
+
+        const [[module]] = await pool.execute(
+            `SELECT id FROM modules WHERE code = ? LIMIT 1`,
+            [moduleCode]
+        )
+
+        if (!module) return res.status(404).json({ message: "Module not found." })
+
+        const errors = []
+        let inserted = 0
+
+        for (let i = 0; i < rows.length; i++) {
+            const row = rows[i]
+            const rowNum = i + 2 // +2 because row 1 is the header in the spreadsheet
+
+            const studentNumber = String(row.studentNumber || "").trim()
+            const category = String(row.category || "").trim().toUpperCase()
+            const title = String(row.title || "").trim()
+            const mark = Number(row.mark)
+            const outOf = Number(row.outOf) || 100
+
+            if (!studentNumber) { errors.push(`Row ${rowNum}: missing student number.`); continue }
+            if (!["CT", "WR", "AS", "EXAM", "OTHER"].includes(category)) {
+                errors.push(`Row ${rowNum}: invalid category "${row.category}".`); continue
+            }
+            if (!title) { errors.push(`Row ${rowNum}: missing title.`); continue }
+            if (isNaN(mark)) { errors.push(`Row ${rowNum}: invalid mark "${row.mark}".`); continue }
+
+            const [[student]] = await pool.execute(
+                `SELECT id FROM students WHERE student_number = ? LIMIT 1`,
+                [studentNumber]
+            )
+
+            if (!student) {
+                errors.push(`Row ${rowNum}: no student found with number ${studentNumber}.`)
+                continue
+            }
+
+            await pool.execute(
+                `
+                INSERT INTO results (student_id, module_id, category, title, mark, out_of)
+                VALUES (?, ?, ?, ?, ?, ?)
+                `,
+                [student.id, module.id, category, title, mark, outOf]
+            )
+
+            inserted++
+        }
+
+        res.status(201).json({
+            message: `${inserted} of ${rows.length} results uploaded.`,
+            inserted,
+            errors
+        })
+
+    } catch (error) {
+        console.error("BULK RESULTS ERROR:")
+        console.error(error)
+        res.status(500).json({ message: "Failed to upload results." })
     }
 })
 
