@@ -20,6 +20,7 @@ export default function Notifications() {
   const [list, setList] = useState([])
   const [form, setForm] = useState({ moduleCode: "", title: "", message: "" })
   const [sent, setSent] = useState(false)
+  const [error, setError] = useState("")
 
   const load = () => fetchJson(`/api/lecturer/notifications?userId=${auth.user.id}`).then(setList)
 
@@ -27,20 +28,25 @@ export default function Notifications() {
     fetchJson(`/api/lecturer/modules?userId=${auth.user.id}`).then((m) => {
       setModules(m)
       if (m[0]) setForm((f) => ({ ...f, moduleCode: m[0].code }))
-    })
-    load()
+    }).catch((err) => setError(err.message))
+    load().catch((err) => setError(err.message))
   }, [])
 
   const submit = async (e) => {
     e.preventDefault()
-    await fetchJson("/api/lecturer/notifications", {
-      method: "POST",
-      body: { ...form, userId: auth.user.id },
-    })
-    setForm((f) => ({ ...f, title: "", message: "" }))
-    setSent(true)
-    load()
-    setTimeout(() => setSent(false), 2500)
+    setError("")
+    try {
+      await fetchJson("/api/lecturer/notifications", {
+        method: "POST",
+        body: { ...form, userId: auth.user.id },
+      })
+      setForm((f) => ({ ...f, title: "", message: "" }))
+      setSent(true)
+      load()
+      setTimeout(() => setSent(false), 2500)
+    } catch (err) {
+      setError(err.message)
+    }
   }
 
   return (
@@ -52,6 +58,7 @@ export default function Notifications() {
         <div className="col-lg-5">
           <div className="card p-4">
             {sent && <div className="alert alert-success py-2">Notification posted.</div>}
+            {error && <div className="alert alert-danger py-2">{error}</div>}
             <form onSubmit={submit}>
               <label className="form-label small">Module</label>
               <select className="form-select mb-3" value={form.moduleCode} onChange={(e) => setForm({ ...form, moduleCode: e.target.value })}>
