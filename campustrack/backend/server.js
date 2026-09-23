@@ -100,7 +100,8 @@ function requireAdmin(req, res, next) {
 
 // =========================================================
 // SECTION 4: SHARED HELPER FUNCTIONS
-// Used by both the lecturer roster/at-risk routes AND the chatbot
+// Used by both the lecturer roster/at-risk routes, the ML
+// prediction route, AND the chatbot
 // =========================================================
 
 async function getModuleRoster(moduleId) {
@@ -160,6 +161,8 @@ async function getModuleRoster(moduleId) {
             name: s.name,
             studentNumber: s.studentNumber,
             attendanceRate,
+            understanding,   // NEW — raw average rating (1-5), needed by the ML prediction route
+            avgMark,          // NEW — raw average mark %, needed by the ML prediction route
             risk: { level, score }
         }
     }))
@@ -1122,6 +1125,62 @@ app.get("/api/lecturer/modules/:moduleCode/roster", async (req, res) => {
         console.error("LECTURER ROSTER ERROR:")
         console.error(error)
         res.status(500).json({ message: "Failed to load roster." })
+    }
+})
+
+// ---- ML PREDICTIONS (NEW) — calls the Python risk model, stores results ----
+app.get("/api/lecturer/modules/:moduleCode/predictions", async (req, res) => {
+    try {
+        const { moduleCode } = req.params
+
+        const [[module]] = await pool.execute(
+            `SELECT id FROM modules WHERE code = ? LIMIT 1`,
+            [moduleCode]
+        )
+        if (!module) return res.status(404).json({ message: "Module not found." })
+
+        const roster = await getModuleRoster(module.id)
+        const results = []
+
+        for (const student of roster) {
+            const mlRes = await fetch("http://localhost:6000/predict", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    attendance_pct: student.attendanceRate ?? 100,
+                    avg_understanding_rating: student.understanding ?? 3,
+                    avg_ca_mark_pct: student.avgMark ?? 60
+                })
+            })
+
+            if (!mlRes.ok) continue
+            const prediction = await mlRes.json()
+
+            await pool.execute(
+                `
+                INSERT INTO predictions (id, student_id, module_id, predicted_grade, risk_level, confidence)
+                VALUES (?, ?, ?, ?, ?, ?)
+                ON DUPLICATE KEY UPDATE
+                    predicted_grade = VALUES(predicted_grade),
+                    risk_level = VALUES(risk_level),
+                    confidence = VALUES(confidence)
+                `,
+                [
+                    crypto.randomUUID(), student.id, module.id,
+                    prediction.predictedOutcome, prediction.riskLevel,
+                    Math.round(prediction.confidence * 100)
+                ]
+            )
+
+            results.push({ ...student, prediction })
+        }
+
+        res.json(results)
+
+    } catch (error) {
+        console.error("ML PREDICTION ERROR:")
+        console.error(error)
+        res.status(500).json({ message: "Failed to get predictions." })
     }
 })
 
