@@ -866,6 +866,40 @@ app.get("/api/student/assignments", async (req, res) => {
     }
 })
 
+app.get("/api/student/attendance/open-sessions", async (req, res) => {
+    try {
+        const { userId } = req.query
+
+        const [rows] = await pool.execute(
+            `
+            SELECT
+                s.id,
+                m.code AS moduleCode,
+                s.topic,
+                s.session_date AS date,
+                a.status AS attendanceStatus,
+                r.rating AS myRating
+            FROM enrolments e
+            JOIN modules m ON m.id = e.module_id
+            JOIN sessions s ON s.module_id = m.id
+            LEFT JOIN attendance a ON a.session_id = s.id AND a.student_id = e.student_id
+            LEFT JOIN ratings r ON r.session_id = s.id AND r.student_id = e.student_id
+            WHERE e.student_id = ? AND e.status = 'active'
+              AND s.attendance_code IS NOT NULL
+              AND s.code_expires_at > NOW()
+            ORDER BY s.session_date DESC
+            `,
+            [userId]
+        )
+
+        res.json(rows)
+    } catch (error) {
+        console.error("OPEN SESSIONS ERROR:")
+        console.error(error)
+        res.status(500).json({ message: "Failed to load open sessions." })
+    }
+})
+
 app.get("/api/student/sessions", async (req, res) => {
     try {
         const { userId } = req.query

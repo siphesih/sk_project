@@ -14,12 +14,13 @@ const fetchJson = async (path, { method = "GET", body } = {}) => {
   return data
 }
 
-export default function ChatPanel({ greeting, suggestions }) {
+export default function ChatPanel({ greeting, suggestions, autoSend }) {
   const { auth } = useAuth()
   const [messages, setMessages] = useState([{ role: "assistant", text: greeting }])
   const [input, setInput] = useState("")
   const [sending, setSending] = useState(false)
   const bottomRef = useRef(null)
+  const autoSendFired = useRef(false)
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" })
@@ -43,6 +44,13 @@ export default function ChatPanel({ greeting, suggestions }) {
       setSending(false)
     }
   }
+
+  useEffect(() => {
+    if (autoSend && !autoSendFired.current) {
+      autoSendFired.current = true
+      send(autoSend)
+    }
+  }, [autoSend])
 
   return (
     <div className="card d-flex flex-column" style={{ height: "60vh" }}>

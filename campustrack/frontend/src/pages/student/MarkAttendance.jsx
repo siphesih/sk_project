@@ -1,5 +1,6 @@
-import React, { useState } from "react"
-import { FiCheckSquare } from "react-icons/fi"
+import React, { useEffect, useState } from "react"
+import { useNavigate } from "react-router-dom"
+import { FiCheckCircle } from "react-icons/fi"
 import { useAuth } from "../../context/AuthContext.jsx"
 
 const fetchJson = async (path, { method = "GET", body } = {}) => {
@@ -16,63 +17,149 @@ const fetchJson = async (path, { method = "GET", body } = {}) => {
 
 export default function MarkAttendance() {
   const { auth } = useAuth()
-  const [code, setCode] = useState("")
-  const [status, setStatus] = useState(null) // { ok, message }
-  const [loading, setLoading] = useState(false)
+  const navigate = useNavigate()
+  const [sessions, setSessions] = useState(null)
+  const [codes, setCodes] = useState({})
+  const [loadError, setLoadError] = useState("")
+  const [feedback, setFeedback] = useState(null)
+  const [processingSession, setProcessingSession] = useState(null)
 
-  const submit = async (e) => {
-    e.preventDefault()
-    setLoading(true)
-    setStatus(null)
+  const loadSessions = async () => {
+    setLoadError("")
     try {
-      const res = await fetchJson("/api/student/attendance/mark", {
+      const rows = await fetchJson(`/api/student/attendance/open-sessions?userId=${encodeURIComponent(auth.user.id)}`)
+      setSessions(rows)
+    } catch (err) {
+      setLoadError(err.message)
+      throw err
+    }
+  }
+
+  useEffect(() => {
+    loadSessions().catch(() => {})
+  }, [])
+
+  const submitCode = async (e, session) => {
+    e.preventDefault()
+    setProcessingSession(session.id)
+    setFeedback(null)
+    try {
+      const code = codes[session.id] || ""
+      const result = await fetchJson("/api/student/attendance/mark", {
         method: "POST",
         body: { userId: auth.user.id, code },
       })
-      setStatus({ ok: true, message: res.message || "Marked present." })
-      setCode("")
+      setCodes((current) => ({ ...current, [session.id]: "" }))
+      setSessions((current) => current.map((item) => (
+        item.id === session.id ? { ...item, attendanceStatus: "present" } : item
+      )))
+      setFeedback({ ok: true, message: result.message || "Marked present." })
     } catch (err) {
-      setStatus({ ok: false, message: err.message })
+      setFeedback({ ok: false, message: err.message })
     } finally {
-      setLoading(false)
+      setProcessingSession(null)
+    }
+  }
+
+  const rateSession = async (session, rating) => {
+    setProcessingSession(session.id)
+    setFeedback(null)
+    try {
+      await fetchJson(`/api/student/sessions/${encodeURIComponent(session.id)}/rating`, {
+        method: "POST",
+        body: { userId: auth.user.id, rating },
+      })
+      setSessions((current) => current.map((item) => (
+        item.id === session.id ? { ...item, myRating: rating } : item
+      )))
+
+      if (rating <= 2) {
+        const autoPrompt = `I rated my understanding of '${session.topic}' (${session.moduleCode}) low. Can you explain it to me?`
+        navigate("/student/assistant", { state: { autoPrompt } })
+      }
+    } catch (err) {
+      setFeedback({ ok: false, message: err.message })
+    } finally {
+      setProcessingSession(null)
     }
   }
 
   return (
     <div>
       <h4 className="fw-bold mb-1">Mark attendance</h4>
-      <p className="text-muted mb-4">Enter the code your lecturer displayed in class.</p>
+      <p className="text-muted mb-4">Enter the live code for your session, then rate how well you understood the topic.</p>
 
-      <div className="card p-4 p-md-5" style={{ maxWidth: 480 }}>
-        <div className="ct-stat-icon bg-primary bg-opacity-10 mb-3">
-          <FiCheckSquare className="text-primary" />
+      {sessions === null && !loadError && <p className="text-muted">Loading open sessions…</p>}
+      {loadError && <div className="alert alert-danger">{loadError}</div>}
+      {feedback && <div className={`alert ${feedback.ok ? "alert-success" : "alert-danger"}`}>{feedback.message}</div>}
+      {sessions?.length === 0 && !loadError && <p className="text-muted">There are no sessions with an open attendance code right now.</p>}
+
+      {sessions?.length > 0 && (
+        <div className="d-flex flex-column gap-3">
+          {sessions.map((session) => (
+            <section className="card p-3 p-md-4" key={session.id}>
+              <div className="d-flex flex-wrap justify-content-between align-items-start gap-3">
+                <div>
+                  <div className="fw-semibold">{session.moduleCode} · {session.date}</div>
+                  <div className="text-muted small">{session.topic}</div>
+                </div>
+                {session.attendanceStatus && (
+                  <span className="badge text-bg-success">Signed</span>
+                )}
+              </div>
+
+              {!session.attendanceStatus ? (
+                <form className="row g-2 mt-2" onSubmit={(e) => submitCode(e, session)}>
+                  <div className="col-sm">
+                    <label className="visually-hidden" htmlFor={`attendance-code-${session.id}`}>Attendance code</label>
+                    <input
+                      id={`attendance-code-${session.id}`}
+                      className="form-control text-uppercase"
+                      placeholder="Attendance code"
+                      value={codes[session.id] || ""}
+                      maxLength={6}
+                      onChange={(e) => setCodes((current) => ({
+                        ...current,
+                        [session.id]: e.target.value.toUpperCase(),
+                      }))}
+                      required
+                    />
+                  </div>
+                  <div className="col-sm-auto">
+                    <button className="btn btn-primary w-100" disabled={processingSession !== null || (codes[session.id] || "").length < 4}>
+                      {processingSession === session.id ? "Checking…" : "Sign register"}
+                    </button>
+                  </div>
+                </form>
+              ) : session.myRating == null ? (
+                <div className="mt-3">
+                  <div className="small fw-semibold mb-2">How well did you understand this session?</div>
+                  <div className="d-flex align-items-center gap-2">
+                    {[1, 2, 3, 4, 5].map((rating) => (
+                      <button
+                        key={rating}
+                        type="button"
+                        className="ct-rating-btn"
+                        aria-label={`Rate understanding ${rating} out of 5`}
+                        disabled={processingSession !== null}
+                        onClick={() => rateSession(session, rating)}
+                      >
+                        {rating}
+                      </button>
+                    ))}
+                    {processingSession === session.id && <span className="text-muted small">Saving…</span>}
+                  </div>
+                </div>
+              ) : (
+                <div className="d-flex align-items-center gap-2 mt-3 text-success small">
+                  <FiCheckCircle />
+                  <span>Thanks, you rated this session {session.myRating}/5.</span>
+                </div>
+              )}
+            </section>
+          ))}
         </div>
-        <form onSubmit={submit}>
-          <label className="form-label small fw-semibold">Attendance code</label>
-          <input
-            className="form-control form-control-lg text-uppercase mb-3"
-            style={{ letterSpacing: "0.3rem", fontWeight: 700 }}
-            placeholder="E.G. 7QX2FM"
-            value={code}
-            maxLength={6}
-            onChange={(e) => setCode(e.target.value.toUpperCase())}
-            required
-          />
-          <button className="btn btn-primary w-100" disabled={loading || code.length < 4}>
-            {loading ? "Checking…" : "Mark me present"}
-          </button>
-        </form>
-
-        {status && (
-          <div className={`alert mt-3 mb-0 ${status.ok ? "alert-success" : "alert-danger"}`}>
-            {status.message}
-          </div>
-        )}
-
-        <p className="text-muted small mt-3 mb-0">
-          Codes expire a few minutes after your lecturer generates them, so type it in as soon as you see it.
-        </p>
-      </div>
+      )}
     </div>
   )
 }
