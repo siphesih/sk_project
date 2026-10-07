@@ -1177,7 +1177,7 @@ app.get("/api/lecturer/modules/:moduleCode/predictions", async (req, res) => {
         const results = []
 
         for (const student of roster) {
-            const mlRes = await fetch("http://localhost:6000/predict", {
+            const mlRes = await fetch("http://localhost:6001/predict", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
@@ -1711,13 +1711,13 @@ ${contextBlock}`
                 "Authorization": `Bearer ${process.env.GROQ_API_KEY}`
             },
             body: JSON.stringify({
-                model: "llama-3.3-70b-versatile",
+                model: "openai/gpt-oss-120b",
                 messages: [
                     { role: "system", content: systemPrompt },
                     { role: "user", content: message }
                 ],
                 temperature: 0.3,
-                max_tokens: 300
+                max_tokens: 500
             })
         })
 

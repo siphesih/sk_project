@@ -6,7 +6,7 @@ model and exposes it over HTTP, so the Node.js backend can call it the
 same way it already calls the Groq API for the AI assistant.
 
 Run with:  python predict_service.py
-Listens on: http://localhost:6000/predict
+Listens on: http://localhost:6001/predict
 """
 
 from flask import Flask, request, jsonify
@@ -67,4 +67,4 @@ def health():
 
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=6000)
+    app.run(host="0.0.0.0", port=6001)

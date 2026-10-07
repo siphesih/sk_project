@@ -14,9 +14,19 @@ const fetchJson = async (path, { method = "GET", body } = {}) => {
   return data
 }
 
-export default function ChatPanel({ greeting, suggestions, autoSend }) {
+export default function ChatPanel({ greeting, suggestions, autoSend, storageKey }) {
   const { auth } = useAuth()
-  const [messages, setMessages] = useState([{ role: "assistant", text: greeting }])
+  const historyKey = `ct-chat-${storageKey}-${auth.user.id}`
+
+  const [messages, setMessages] = useState(() => {
+    try {
+      const saved = sessionStorage.getItem(historyKey)
+      if (saved) return JSON.parse(saved)
+    } catch {
+      // ignore corrupt storage, fall back to greeting
+    }
+    return [{ role: "assistant", text: greeting }]
+  })
   const [input, setInput] = useState("")
   const [sending, setSending] = useState(false)
   const bottomRef = useRef(null)
@@ -24,6 +34,7 @@ export default function ChatPanel({ greeting, suggestions, autoSend }) {
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" })
+    sessionStorage.setItem(historyKey, JSON.stringify(messages))
   }, [messages])
 
   const send = async (text) => {
