@@ -14,15 +14,27 @@ const fetchJson = async (path, { method = "GET", body } = {}) => {
   return data
 }
 
-export default function ChatPanel({ greeting, suggestions }) {
+export default function ChatPanel({ greeting, suggestions, autoSend, storageKey }) {
   const { auth } = useAuth()
-  const [messages, setMessages] = useState([{ role: "assistant", text: greeting }])
+  const historyKey = `ct-chat-${storageKey}-${auth.user.id}`
+
+  const [messages, setMessages] = useState(() => {
+    try {
+      const saved = sessionStorage.getItem(historyKey)
+      if (saved) return JSON.parse(saved)
+    } catch {
+      // ignore corrupt storage, fall back to greeting
+    }
+    return [{ role: "assistant", text: greeting }]
+  })
   const [input, setInput] = useState("")
   const [sending, setSending] = useState(false)
   const bottomRef = useRef(null)
+  const autoSendFired = useRef(false)
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" })
+    sessionStorage.setItem(historyKey, JSON.stringify(messages))
   }, [messages])
 
   const send = async (text) => {
@@ -43,6 +55,13 @@ export default function ChatPanel({ greeting, suggestions }) {
       setSending(false)
     }
   }
+
+  useEffect(() => {
+    if (autoSend && !autoSendFired.current) {
+      autoSendFired.current = true
+      send(autoSend)
+    }
+  }, [autoSend])
 
   return (
     <div className="card d-flex flex-column" style={{ height: "60vh" }}>

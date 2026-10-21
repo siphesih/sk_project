@@ -1,0 +1,250 @@
+.ct-week-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 12px;
+}
+
+.ct-day-col {
+  background: #fff;
+  border: 1px solid #e9ecef;
+  border-radius: 12px;
+  overflow: visible;
+  position: relative;
+  min-height: 320px;
+  display: flex;
+  flex-direction: column;
+}
+
+.ct-day-col--today {
+  border-color: #0d6efd;
+  box-shadow: 0 0 0 1px #0d6efd;
+}
+
+.ct-day-col__header {
+  padding: 10px 12px;
+  font-weight: 600;
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  border-bottom: 1px solid #f1f3f5;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  position: relative;
+  cursor: default;
+}
+
+.ct-day-col--today .ct-day-col__header {
+  color: #0d6efd;
+}
+
+.ct-today-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #0d6efd;
+}
+
+.ct-day-col__body {
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  flex: 1;
+}
+
+.ct-class-block {
+  border-radius: 8px;
+  padding: 8px 10px;
+  font-size: 0.8rem;
+}
+
+.ct-class-block--0 { background: #e7f1ff; color: #174a8b; }
+.ct-class-block--1 { background: #e6f7ef; color: #176b4b; }
+.ct-class-block--2 { background: #fff1df; color: #8a4b08; }
+.ct-class-block--3 { background: #f5eaff; color: #653c8c; }
+.ct-class-block--4 { background: #ffe8eb; color: #9b3041; }
+.ct-class-block--5 { background: #e5f5f5; color: #17666b; }
+
+.ct-class-block__code {
+  font-weight: 700;
+  margin-bottom: 2px;
+}
+
+.ct-class-block__meta {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  opacity: 0.85;
+  font-size: 0.75rem;
+}
+
+.ct-day-empty {
+  color: #adb5bd;
+  text-align: center;
+  padding: 20px 0;
+  font-size: 0.85rem;
+}
+
+/* Hover popover — only rendered for today's column */
+.ct-day-popover {
+  display: none;
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  margin-top: 6px;
+  background: #fff;
+  border: 1px solid #dee2e6;
+  border-radius: 10px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+  padding: 12px;
+  z-index: 20;
+  min-width: 220px;
+}
+
+.ct-day-col--today .ct-day-col__header:hover .ct-day-popover {
+  display: block;
+}
+
+.ct-day-popover__title {
+  font-weight: 700;
+  font-size: 0.8rem;
+  margin-bottom: 8px;
+  color: #212529;
+}
+
+.ct-day-popover__row {
+  padding: 6px 0;
+  border-bottom: 1px solid #f1f3f5;
+}
+
+.ct-day-popover__row:last-child {
+  border-bottom: none;
+}
+
+/* Stack to one column on small screens */
+@media (max-width: 768px) {
+  .ct-week-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Assignments - planner-style list */
+.ct-assign-list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.ct-assign-row {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  padding: 16px 20px;
+  background: #fff;
+  border-left: 3px solid #e2ddd3;
+  border-radius: 4px;
+}
+
+.ct-assign-row__date {
+  flex-shrink: 0;
+  width: 52px;
+  text-align: center;
+  font-family: Georgia, "Times New Roman", serif;
+}
+
+.ct-assign-row__date-num {
+  font-size: 1.6rem;
+  font-weight: 700;
+  line-height: 1;
+  color: #1c1a17;
+}
+
+.ct-assign-row__date-month {
+  font-size: 0.7rem;
+  color: #8a8378;
+  margin-top: 2px;
+}
+
+.ct-assign-row__body {
+  flex: 1;
+  min-width: 0;
+}
+
+.ct-assign-row__title {
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 1.05rem;
+  color: #1c1a17;
+  margin-bottom: 2px;
+}
+
+.ct-assign-row__module {
+  font-size: 0.8rem;
+  color: #8a8378;
+}
+
+.ct-assign-row__status {
+  flex-shrink: 0;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #8a8378;
+}
+
+.ct-assign-row--critical {
+  border-left-color: #b7791f;
+  background: #fdf6ea;
+}
+
+.ct-assign-row--critical .ct-assign-row__status {
+  color: #b7791f;
+}
+
+.ct-assign-row--soon {
+  border-left-color: #d4a256;
+}
+
+.ct-assign-row--soon .ct-assign-row__status {
+  color: #ad7a2c;
+}
+
+.ct-assign-row--past {
+  opacity: 0.55;
+}
+
+.ct-assign-row--past .ct-assign-row__date-num,
+.ct-assign-row--past .ct-assign-row__title {
+  text-decoration: line-through;
+  text-decoration-color: #c7c0b3;
+}
+
+.ct-assign-empty {
+  text-align: center;
+  padding: 60px 20px;
+  color: #8a8378;
+}
+
+.ct-assign-empty__mark {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: 2px solid #c7c0b3;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 12px;
+  font-size: 0.8rem;
+  color: #8a8378;
+}
+
+@media (max-width: 576px) {
+  .ct-assign-row {
+    gap: 12px;
+    padding: 12px 14px;
+  }
+
+  .ct-assign-row__status {
+    display: none;
+  }
+}
+

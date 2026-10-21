@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react"
+import * as XLSX from "xlsx"
 import { useAuth } from "../../context/AuthContext.jsx"
 
 const fetchJson = async (path, { method = "GET", body } = {}) => {
@@ -23,6 +24,8 @@ export default function Results() {
   const [results, setResults] = useState([])
   const [form, setForm] = useState({ studentId: "", category: "CT", title: "", mark: "", outOf: 100 })
   const [saved, setSaved] = useState(false)
+  const [uploadResult, setUploadResult] = useState(null)
+  const [uploading, setUploading] = useState(false)
 
   useEffect(() => {
     fetchJson(`/api/lecturer/modules?userId=${auth.user.id}`).then((m) => {
@@ -48,6 +51,36 @@ export default function Results() {
     setForm({ studentId: "", category: "CT", title: "", mark: "", outOf: 100 })
     setSaved(true)
     setTimeout(() => setSaved(false), 2500)
+  }
+
+  const handleFileUpload = async (e) => {
+    const file = e.target.files[0]
+    if (!file) return
+
+    setUploading(true)
+    setUploadResult(null)
+
+    try {
+      const buffer = await file.arrayBuffer()
+      const workbook = XLSX.read(buffer)
+      const firstSheet = workbook.Sheets[workbook.SheetNames[0]]
+      const rows = XLSX.utils.sheet_to_json(firstSheet)
+
+      const res = await fetchJson("/api/lecturer/results/bulk", {
+        method: "POST",
+        body: { moduleCode, rows, userId: auth.user.id },
+      })
+
+      setUploadResult(res)
+
+      const fresh = await fetchJson(`/api/lecturer/results/${moduleCode}?userId=${auth.user.id}`)
+      setResults(fresh)
+    } catch (err) {
+      setUploadResult({ message: err.message, errors: [] })
+    } finally {
+      setUploading(false)
+      e.target.value = "" // reset the file input so the same file can be re-selected
+    }
   }
 
   return (
@@ -95,6 +128,32 @@ export default function Results() {
 
               <button className="btn btn-primary w-100">Save result</button>
             </form>
+          </div>
+
+          <div className="card p-4 mt-4">
+            <div className="fw-semibold mb-2">Or upload a spreadsheet</div>
+            <p className="text-muted small mb-3">
+              Columns required: <code>studentNumber</code>, <code>category</code> (CT/WR/AS/EXAM/OTHER),{" "}
+              <code>title</code>, <code>mark</code>, <code>outOf</code>.
+            </p>
+            <input
+              type="file"
+              accept=".xlsx,.xls,.csv"
+              className="form-control mb-2"
+              onChange={handleFileUpload}
+              disabled={uploading || !moduleCode}
+            />
+            {uploading && <div className="text-muted small">Uploading…</div>}
+            {uploadResult && (
+              <div className={`alert py-2 mt-2 ${uploadResult.errors?.length ? "alert-warning" : "alert-success"}`}>
+                <div>{uploadResult.message}</div>
+                {uploadResult.errors?.length > 0 && (
+                  <ul className="mb-0 mt-2 small">
+                    {uploadResult.errors.map((e, i) => <li key={i}>{e}</li>)}
+                  </ul>
+                )}
+              </div>
+            )}
           </div>
         </div>
 

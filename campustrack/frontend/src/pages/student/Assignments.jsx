@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react"
+import { Link } from "react-router-dom"
 import { useAuth } from "../../context/AuthContext.jsx"
 
 const fetchJson = async (path, { method = "GET", body } = {}) => {
@@ -28,40 +29,40 @@ export default function Assignments() {
       <h4 className="fw-bold mb-1">Assignments</h4>
       <p className="text-muted mb-4">Everything due across your modules, soonest first.</p>
 
-      <div className="card p-0">
-        <div className="table-responsive">
-          <table className="table mb-0 align-middle">
-            <thead>
-              <tr className="text-muted small text-uppercase">
-                <th className="ps-4">Title</th>
-                <th>Module</th>
-                <th>Due</th>
-                <th className="pe-4">Status</th>
-              </tr>
-            </thead>
-            <tbody>
-              {rows === null ? (
-                <tr><td colSpan={4} className="text-center text-muted py-4">Loading…</td></tr>
-              ) : rows.length === 0 ? (
-                <tr><td colSpan={4} className="text-center text-muted py-4">Nothing due — enjoy the breathing room.</td></tr>
-              ) : rows.map((r) => {
-                const d = daysLeft(r.due)
-                return (
-                  <tr key={r.id}>
-                    <td className="ps-4 fw-semibold">{r.title}</td>
-                    <td>{r.moduleCode}</td>
-                    <td>{r.due}</td>
-                    <td className="pe-4">
-                      <span className={"badge rounded-pill " + (d < 0 ? "text-bg-secondary" : d <= 5 ? "text-bg-danger" : "text-bg-light border")}>
-                        {d < 0 ? "Past due" : d === 0 ? "Due today" : `${d} day${d === 1 ? "" : "s"} left`}
-                      </span>
-                    </td>
-                  </tr>
-                )
-              })}
-            </tbody>
-          </table>
-        </div>
+      <div className="ct-assign-list">
+        {rows === null ? (
+          <div className="ct-assign-empty">Loading...</div>
+        ) : rows.length === 0 ? (
+          <div className="ct-assign-empty">
+            <div className="ct-assign-empty__mark">OK</div>
+            Nothing due - enjoy the breathing room.
+          </div>
+        ) : rows.map((r) => {
+          const days = daysLeft(r.due)
+          const urgencyClass = days < 0 ? "ct-assign-row--past" : days <= 5 ? "ct-assign-row--critical" : days <= 14 ? "ct-assign-row--soon" : ""
+          const dueDate = new Date(r.due)
+
+          return (
+            <div className={`ct-assign-row ${urgencyClass}`} key={r.id}>
+              <div className="ct-assign-row__date">
+                <div className="ct-assign-row__date-num">{dueDate.getDate()}</div>
+                <div className="ct-assign-row__date-month">{dueDate.toLocaleString("en-US", { month: "short" })}</div>
+              </div>
+              <div className="ct-assign-row__body">
+                <div className="ct-assign-row__title">{r.title}</div>
+                <div className="ct-assign-row__module">{r.moduleCode}</div>
+              </div>
+              <div className="ct-assign-row__status">
+                {days < 0 ? "Past due" : days === 0 ? "Due today" : `${days} day${days === 1 ? "" : "s"} left`}
+              </div>
+              {days < 0 && (
+                <Link to="/student/results" className="btn btn-outline-primary btn-sm text-nowrap">
+                  View results
+                </Link>
+              )}
+            </div>
+          )
+        })}
       </div>
     </div>
   )

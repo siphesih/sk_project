@@ -12,6 +12,7 @@ import StudentAssignments from "./pages/student/Assignments.jsx"
 import StudentMarkAttendance from "./pages/student/MarkAttendance.jsx"
 import StudentRatings from "./pages/student/Ratings.jsx"
 import StudentAssistant from "./pages/student/Assistant.jsx"
+import StudentNotifications from "./pages/student/Notifications.jsx"
 
 import LecturerLayout from "./pages/lecturer/LecturerLayout.jsx"
 import LecturerOverview from "./pages/lecturer/Overview.jsx"
@@ -28,6 +29,7 @@ import AdminUsers from "./pages/admin/Users.jsx"
 import AdminModules from "./pages/admin/Modules.jsx"
 import AdminEnrolments from "./pages/admin/Enrolments.jsx"
 import AdminCourses from "./pages/admin/Courses.jsx"
+import StudentResults from "./pages/student/Results.jsx"
 
 export default function App() {
   return (
@@ -39,9 +41,11 @@ export default function App() {
         <Route index element={<StudentOverview />} />
         <Route path="timetable" element={<StudentTimetable />} />
         <Route path="assignments" element={<StudentAssignments />} />
+        <Route path="notifications" element={<StudentNotifications />} />
         <Route path="attendance" element={<StudentMarkAttendance />} />
         <Route path="ratings" element={<StudentRatings />} />
         <Route path="assistant" element={<StudentAssistant />} />
+        <Route path="results" element={<StudentResults />} />
       </Route>
 
       <Route path="/lecturer" element={<ProtectedRoute role="lecturer"><LecturerLayout /></ProtectedRoute>}>

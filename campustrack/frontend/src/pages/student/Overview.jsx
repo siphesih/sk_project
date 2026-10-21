@@ -69,6 +69,9 @@ export default function Overview() {
               <Link to="/student/assignments" className="mt-auto btn btn-outline-primary btn-sm d-inline-flex align-items-center gap-1" style={{ width: "fit-content" }}>
                 View all assignments <FiArrowRight />
               </Link>
+              <Link to="/student/results" className="mt-2 btn btn-outline-primary btn-sm" style={{ width: "fit-content" }}>
+                View results
+              </Link>
             </div>
           </div>
 

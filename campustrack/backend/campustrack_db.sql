@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Aug 26, 2026 at 02:41 PM
+-- Generation Time: Sep 07, 2026 at 02:52 PM
 -- Server version: 10.4.32-MariaDB
 -- PHP Version: 8.0.30
 
@@ -67,7 +67,8 @@ CREATE TABLE `attendance` (
 INSERT INTO `attendance` (`id`, `session_id`, `student_id`, `status`, `marked_at`, `lecturer_verified`) VALUES
 (1, 's-1', 'student-1', 'present', '2026-07-20 08:03:00', 1),
 (2, 's-3', 'student-1', 'present', '2026-07-21 12:05:00', 1),
-(3, 's-4', 'student-1', 'present', '2026-07-23 09:02:00', 1);
+(3, 's-4', 'student-1', 'present', '2026-07-23 09:02:00', 1),
+(4, '4891fc01-efa9-40ee-a34e-ec8ae96c07ac', 'student-1', 'present', '2026-09-02 11:42:26', 0);
 
 -- --------------------------------------------------------
 
@@ -240,9 +241,28 @@ INSERT INTO `module_lecturers` (`id`, `module_id`, `lecturer_id`, `is_primary`, 
 ('2371aaf7-b10b-4db5-a409-a0596a297392', '6d0dd2f3-e9cb-450b-985d-9a0c8735720a', 'staff-lect-1', 1, 'staff-admin-1', '2026-08-14 08:12:17'),
 ('cdbca127-07b0-4efc-875d-a8205af2c670', '10798e0f-d6c3-4812-ae7c-11e6c2421d79', 'staff-lect-1', 1, 'staff-admin-1', '2026-08-14 08:16:41'),
 ('f8ebb05e-cb0d-40dd-9f12-83b00be44197', '888e61d6-58b1-4401-a894-a5b15e9173e3', '6531ccd1-2353-49fe-8d06-0958e2abb832', 1, 'staff-admin-1', '2026-08-24 07:15:23'),
+('ml-acc107v', 'mod-acc107v', 'staff-lect-7', 1, 'staff-admin-1', '2026-08-26 12:46:48'),
+('ml-ain307v', 'mod-ain307v', 'staff-lect-3', 1, 'staff-admin-1', '2026-08-26 12:46:48'),
+('ml-ban307v', 'mod-ban307v', 'staff-lect-8', 1, 'staff-admin-1', '2026-08-26 12:46:48'),
+('ml-bus107v', 'mod-bus107v', 'staff-lect-6', 1, 'staff-admin-1', '2026-08-26 12:46:48'),
+('ml-cap307v', 'mod-cap307v', 'staff-lect-3', 1, 'staff-admin-1', '2026-08-26 12:46:48'),
+('ml-dbs207v', 'mod-dbs207v', 'staff-lect-1', 1, 'staff-admin-1', '2026-08-26 12:46:48'),
 ('ml-dtd117v', 'mod-dtd117v', 'staff-lect-1', 1, 'staff-admin-1', '2026-08-12 12:19:35'),
+('ml-eco207v', 'mod-eco207v', 'staff-lect-8', 1, 'staff-admin-1', '2026-08-26 12:46:48'),
+('ml-erp307v', 'mod-erp307v', 'staff-lect-6', 1, 'staff-admin-1', '2026-08-26 12:46:48'),
+('ml-eup117v', 'mod-eup117v', 'staff-lect-2', 1, 'staff-admin-1', '2026-08-26 12:46:48'),
 ('ml-isj107v', 'mod-isj107v', 'staff-lect-1', 1, 'staff-admin-1', '2026-08-12 12:19:35'),
-('ml-sec117v', 'mod-sec117v', 'staff-lect-1', 1, 'staff-admin-1', '2026-08-12 12:19:35');
+('ml-mob307v', 'mod-mob307v', 'staff-lect-3', 1, 'staff-admin-1', '2026-08-26 12:46:48'),
+('ml-mth117v', 'mod-mth117v', 'staff-lect-3', 1, 'staff-admin-1', '2026-08-26 12:46:48'),
+('ml-net307v', 'mod-net307v', 'staff-lect-5', 1, 'staff-admin-1', '2026-08-26 12:46:48'),
+('ml-oop207v', 'mod-oop207v', 'staff-lect-2', 1, 'staff-admin-1', '2026-08-26 12:46:48'),
+('ml-osy207v', 'mod-osy207v', 'staff-lect-5', 1, 'staff-admin-1', '2026-08-26 12:46:48'),
+('ml-ppr307v', 'mod-ppr307v', 'staff-lect-4', 1, 'staff-admin-1', '2026-08-26 12:46:48'),
+('ml-prg117v', 'mod-prg117v', 'staff-lect-3', 1, 'staff-admin-1', '2026-08-26 12:46:48'),
+('ml-sec117v', 'mod-sec117v', 'staff-lect-1', 1, 'staff-admin-1', '2026-08-12 12:19:35'),
+('ml-sen307v', 'mod-sen307v', 'staff-lect-3', 1, 'staff-admin-1', '2026-08-26 12:46:48'),
+('ml-sqa207v', 'mod-sqa207v', 'staff-lect-3', 1, 'staff-admin-1', '2026-08-26 12:46:48'),
+('ml-web207v', 'mod-web207v', 'staff-lect-2', 1, 'staff-admin-1', '2026-08-26 12:46:48');
 
 -- --------------------------------------------------------
 
@@ -263,7 +283,8 @@ CREATE TABLE `notifications` (
 --
 
 INSERT INTO `notifications` (`id`, `module_id`, `title`, `message`, `created_at`) VALUES
-('1004', 'mod-isj107v', 'Assignment 1 deadline extended', 'The deadline has been extended to 10 March.', '2026-08-12 12:19:35');
+('1004', 'mod-isj107v', 'Assignment 1 deadline extended', 'The deadline has been extended to 10 March.', '2026-08-12 12:19:35'),
+('4a48aa61-7a46-4cc2-84c8-dbf1b5ff13e5', 'mod-sec117v', 'SEMESTER TEST ONE', 'B10-248', '2026-09-03 07:17:14');
 
 -- --------------------------------------------------------
 
@@ -310,7 +331,11 @@ CREATE TABLE `ratings` (
 --
 
 INSERT INTO `ratings` (`session_id`, `student_id`, `rating`, `feedback`) VALUES
-('s-1', 'student-1', 4, NULL);
+('4891fc01-efa9-40ee-a34e-ec8ae96c07ac', 'student-1', 5, NULL),
+('s-1', 'student-1', 5, NULL),
+('s-2', 'student-1', 5, NULL),
+('s-3', 'student-1', 5, NULL),
+('s-4', 'student-1', 5, NULL);
 
 -- --------------------------------------------------------
 
@@ -362,6 +387,8 @@ CREATE TABLE `sessions` (
 --
 
 INSERT INTO `sessions` (`id`, `module_id`, `lecturer_id`, `session_date`, `time_slot`, `topic`, `attendance_code`, `code_expires_at`, `expiry_minutes`, `created_at`) VALUES
+('3c5fd923-787c-4c5c-b6b5-e5a9c48109d4', 'mod-dbs207v', 'staff-lect-1', '2026-09-02', NULL, 'Data Structures and alghorythems', '23SJMR', '2026-09-02 10:55:48', 3, '2026-09-02 08:52:39'),
+('4891fc01-efa9-40ee-a34e-ec8ae96c07ac', 'mod-sec117v', 'staff-lect-1', '2026-09-02', NULL, 'Basics', 'Q2VX1X', '2026-09-02 11:59:53', 10, '2026-09-02 09:41:42'),
 ('s-1', 'mod-isj107v', 'staff-lect-1', '2026-07-20', '08:00–09:30', 'Requirements gathering & scoping', NULL, NULL, 15, '2026-08-12 12:19:35'),
 ('s-2', 'mod-isj107v', 'staff-lect-1', '2026-07-22', '10:00–11:30', 'System integration patterns', NULL, NULL, 15, '2026-08-12 12:19:35'),
 ('s-3', 'mod-sec117v', 'staff-lect-1', '2026-07-21', '12:00–13:30', 'REST vs SOAP services', NULL, NULL, 15, '2026-08-12 12:19:35'),
@@ -587,7 +614,7 @@ ALTER TABLE `timetable`
 -- AUTO_INCREMENT for table `attendance`
 --
 ALTER TABLE `attendance`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
 
 --
 -- AUTO_INCREMENT for table `enrolments`
