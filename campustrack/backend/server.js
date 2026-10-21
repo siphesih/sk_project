@@ -6,18 +6,18 @@ const crypto = require("crypto")
 
 const app = express()
 
-const PORT = 5000
+const PORT = Number(process.env.PORT || 5000)
 
 // =========================================================
 // DATABASE
 // =========================================================
 
 const pool = mysql.createPool({
-    host: "127.0.0.1",
-    user: "root",
-    password: "",
-    database: "campustrack_db",
-    port: 3306,
+    host: process.env.DB_HOST || "127.0.0.1",
+    user: process.env.DB_USER || "root",
+    password: process.env.DB_PASSWORD || "",
+    database: process.env.DB_NAME || "campustrack_db",
+    port: Number(process.env.DB_PORT || 3306),
 
     waitForConnections: true,
     connectionLimit: 10

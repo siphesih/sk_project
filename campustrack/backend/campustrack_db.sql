@@ -303,7 +303,7 @@ CREATE TABLE `ratings` (
   `student_id` varchar(36) NOT NULL,
   `rating` int(11) NOT NULL,
   `feedback` text DEFAULT NULL
-) ;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
 -- Dumping data for table `ratings`

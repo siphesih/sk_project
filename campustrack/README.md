@@ -26,16 +26,40 @@ no Next.js).
 
 ```
 campustrack/
-  backend/     Express API, in-memory data store (swap for a real DB later)
+  backend/     Express API and MySQL database connection
   frontend/    Vite + React app, Bootstrap 5
 ```
 
-## Running it locally
+## Running with Docker
 
-Requires Node.js 18+.
+Requires Docker Desktop with Docker Compose.
 
 ```bash
-# Terminal 1 — API on http://localhost:4000
+# Run from the campustrack folder
+docker compose up --build
+
+# Stop the containers (database data is kept)
+docker compose down
+```
+
+Open http://localhost:5173. The frontend proxies `/api/*` requests to the backend,
+and the backend connects to the MariaDB container. On the first run, Docker
+initializes the database from `backend/campustrack_db.sql`; this happens only
+when the database volume is created.
+
+To stop and also remove the database volume (this deletes its stored data), run:
+
+```bash
+docker compose down --volumes
+```
+
+## Running without Docker
+
+Requires Node.js 18+ and a local MySQL/MariaDB server with the database in
+`backend/campustrack_db.sql` imported as `campustrack_db`.
+
+```bash
+# Terminal 1 — API on http://localhost:5000
 cd backend
 npm install
 npm start
@@ -46,8 +70,7 @@ npm install
 npm run dev
 ```
 
-The Vite dev server proxies `/api/*` to the backend (see `frontend/vite.config.js`),
-so just open http://localhost:5173.
+The Vite dev server proxies `/api/*` to the API at `http://localhost:5000`.
 
 ## Demo logins
 
@@ -68,8 +91,8 @@ so just open http://localhost:5173.
 
 ## Notes
 
-- Data is in-memory (`backend/data/store.js`) and resets when the server
-  restarts — fine for a pilot demo, swap in a real database before production.
+- Database connection settings can be overridden with `DB_HOST`, `DB_PORT`,
+  `DB_NAME`, `DB_USER`, and `DB_PASSWORD`.
 - The assistant is intentionally rule-based (keyword matching against each
   user's own data), matching the proposal's scope decision to avoid an
   external AI service for the MVP.
