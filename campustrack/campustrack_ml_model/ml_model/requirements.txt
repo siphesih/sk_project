@@ -1,0 +1,6 @@
+flask==3.1.2
+joblib==1.5.2
+numpy==2.3.4
+pandas==2.3.3
+# Must match the version used to train risk_model.joblib / risk_scaler.joblib
+scikit-learn==1.8.0

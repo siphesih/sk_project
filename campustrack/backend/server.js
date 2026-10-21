@@ -20,6 +20,7 @@ const crypto = require("crypto")
 
 const app = express()
 const PORT = Number(process.env.PORT || 5000)
+const ML_SERVICE_URL = process.env.ML_SERVICE_URL || "http://localhost:6001"
 
 
 // =========================================================
@@ -1177,7 +1178,7 @@ app.get("/api/lecturer/modules/:moduleCode/predictions", async (req, res) => {
         const results = []
 
         for (const student of roster) {
-            const mlRes = await fetch("http://localhost:6001/predict", {
+            const mlRes = await fetch(`${ML_SERVICE_URL}/predict`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
