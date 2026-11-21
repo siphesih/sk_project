@@ -9,6 +9,8 @@ Run with:  python predict_service.py
 Listens on: http://localhost:6001/predict
 """
 
+import math
+
 from flask import Flask, request, jsonify
 import joblib
 import numpy as np
@@ -36,17 +38,26 @@ def risk_band(pass_probability):
 
 @app.route("/predict", methods=["POST"])
 def predict():
-    data = request.get_json()
+    # silent=True: a missing or non-JSON body becomes None (handled below)
+    # instead of Flask's own 415 error page.
+    data = request.get_json(silent=True)
+    if not isinstance(data, dict):
+        return jsonify({"error": "Send the student's figures as a JSON object."}), 400
 
     missing = [f for f in FEATURES if f not in data]
     if missing:
         return jsonify({"error": f"Missing fields: {', '.join(missing)}"}), 400
 
     try:
-        import pandas as pd
-        x = pd.DataFrame([[data[f] for f in FEATURES]], columns=FEATURES, dtype=float)
+        values = [float(data[f]) for f in FEATURES]
     except (ValueError, TypeError):
         return jsonify({"error": "All fields must be numeric."}), 400
+    # null and "nan" would otherwise reach the model as NaN and crash it (HTTP 500).
+    if not all(math.isfinite(v) for v in values):
+        return jsonify({"error": "All fields must be numeric."}), 400
+
+    import pandas as pd
+    x = pd.DataFrame([values], columns=FEATURES, dtype=float)
 
     x_scaled = scaler.transform(x)
     pass_probability = float(model.predict_proba(x_scaled)[0][1])

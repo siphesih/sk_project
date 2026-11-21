@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from "react"
+import ReactMarkdown from "react-markdown"
 import { FiSend, FiCpu } from "react-icons/fi"
 import { useAuth } from "../context/AuthContext.jsx"
 
@@ -76,7 +77,9 @@ export default function ChatPanel({ greeting, suggestions, autoSend, storageKey 
       <div className="flex-grow-1 overflow-auto p-3 d-flex flex-column gap-2">
         {messages.map((m, i) => (
           <div key={i} className={"d-flex " + (m.role === "user" ? "justify-content-end" : "justify-content-start")}>
-            <div className={`ct-chat-bubble ${m.role}`}>{m.text}</div>
+            <div className={`ct-chat-bubble ${m.role}`}>
+              {m.role === "assistant" ? <ReactMarkdown>{m.text}</ReactMarkdown> : m.text}
+            </div>
           </div>
         ))}
         {sending && <div className="text-muted small">Assistant is typing…</div>}

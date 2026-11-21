@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react"
-import { useNavigate } from "react-router-dom"
 import { FiCheckCircle } from "react-icons/fi"
 import { useAuth } from "../../context/AuthContext.jsx"
+import SessionQuiz from "../../components/SessionQuiz.jsx"
 
 const fetchJson = async (path, { method = "GET", body } = {}) => {
   const res = await fetch(path, {
@@ -15,10 +15,23 @@ const fetchJson = async (path, { method = "GET", body } = {}) => {
   return data
 }
 
+const getCurrentLocation = () => new Promise((resolve) => {
+  if (!navigator.geolocation) {
+    resolve(null)
+    return
+  }
+
+  navigator.geolocation.getCurrentPosition(
+    ({ coords }) => resolve({ latitude: coords.latitude, longitude: coords.longitude, accuracy: coords.accuracy }),
+    () => resolve(null),
+    { enableHighAccuracy: true, timeout: 10000 },
+  )
+})
+
 export default function MarkAttendance() {
   const { auth } = useAuth()
-  const navigate = useNavigate()
   const [sessions, setSessions] = useState(null)
+  const [openQuiz, setOpenQuiz] = useState(null)
   const [codes, setCodes] = useState({})
   const [loadError, setLoadError] = useState("")
   const [feedback, setFeedback] = useState(null)
@@ -43,55 +56,51 @@ export default function MarkAttendance() {
     e.preventDefault()
     setProcessingSession(session.id)
     setFeedback(null)
+    let locationFailed = false
     try {
       const code = codes[session.id] || ""
+      const location = await getCurrentLocation()
+      locationFailed = !location
       const result = await fetchJson("/api/student/attendance/mark", {
         method: "POST",
-        body: { userId: auth.user.id, code },
+        body: { userId: auth.user.id, code, ...(location || {}) },
       })
       setCodes((current) => ({ ...current, [session.id]: "" }))
       setSessions((current) => current.map((item) => (
         item.id === session.id ? { ...item, attendanceStatus: "present" } : item
       )))
-      setFeedback({ ok: true, message: result.message || "Marked present." })
+      const flagged = result.locationStatus === "outside_radius" || result.locationStatus === "no_location"
+      setFeedback({
+        ok: true,
+        warning: !location || flagged,
+        message: `${!location ? "Location permission is needed to confirm you are in class. " : ""}${result.message || "Marked present."}`,
+      })
+      if (session.hasQuiz) setOpenQuiz(session.id)
     } catch (err) {
-      setFeedback({ ok: false, message: err.message })
+      setFeedback({
+        ok: false,
+        warning: locationFailed,
+        message: `${locationFailed ? "Location permission is needed to sign the register. " : ""}${err.message}`,
+      })
     } finally {
       setProcessingSession(null)
     }
   }
 
-  const rateSession = async (session, rating) => {
-    setProcessingSession(session.id)
-    setFeedback(null)
-    try {
-      await fetchJson(`/api/student/sessions/${encodeURIComponent(session.id)}/rating`, {
-        method: "POST",
-        body: { userId: auth.user.id, rating },
-      })
-      setSessions((current) => current.map((item) => (
-        item.id === session.id ? { ...item, myRating: rating } : item
-      )))
-
-      if (rating <= 2) {
-        const autoPrompt = `I rated my understanding of '${session.topic}' (${session.moduleCode}) low. Can you explain it to me?`
-        navigate("/student/assistant", { state: { autoPrompt } })
-      }
-    } catch (err) {
-      setFeedback({ ok: false, message: err.message })
-    } finally {
-      setProcessingSession(null)
-    }
+  const quizCompleted = (session, result) => {
+    setSessions((current) => current.map((item) => (
+      item.id === session.id ? { ...item, myRating: result.rating, quizScore: result.score, quizTotal: result.total } : item
+    )))
   }
 
   return (
     <div>
       <h4 className="fw-bold mb-1">Mark attendance</h4>
-      <p className="text-muted mb-4">Enter the live code for your session, then rate how well you understood the topic.</p>
+      <p className="text-muted mb-4">Enter the live code for your session, then take a short quiz on what was taught.</p>
 
       {sessions === null && !loadError && <p className="text-muted">Loading open sessions…</p>}
       {loadError && <div className="alert alert-danger">{loadError}</div>}
-      {feedback && <div className={`alert ${feedback.ok ? "alert-success" : "alert-danger"}`}>{feedback.message}</div>}
+      {feedback && <div className={`alert ${feedback.warning ? "alert-warning" : feedback.ok ? "alert-success" : "alert-danger"}`}>{feedback.message}</div>}
       {sessions?.length === 0 && !loadError && <p className="text-muted">There are no sessions with an open attendance code right now.</p>}
 
       {sessions?.length > 0 && (
@@ -130,30 +139,26 @@ export default function MarkAttendance() {
                       {processingSession === session.id ? "Checking…" : "Sign register"}
                     </button>
                   </div>
+                  <div className="col-12 small text-muted">Your location is used only to confirm you are in class.</div>
                 </form>
-              ) : session.myRating == null ? (
+              ) : !session.hasQuiz ? (
+                <div className="mt-3 small text-muted">There is no quiz for this session.</div>
+              ) : openQuiz === session.id ? (
                 <div className="mt-3">
-                  <div className="small fw-semibold mb-2">How well did you understand this session?</div>
-                  <div className="d-flex align-items-center gap-2">
-                    {[1, 2, 3, 4, 5].map((rating) => (
-                      <button
-                        key={rating}
-                        type="button"
-                        className="ct-rating-btn"
-                        aria-label={`Rate understanding ${rating} out of 5`}
-                        disabled={processingSession !== null}
-                        onClick={() => rateSession(session, rating)}
-                      >
-                        {rating}
-                      </button>
-                    ))}
-                    {processingSession === session.id && <span className="text-muted small">Saving…</span>}
-                  </div>
+                  <SessionQuiz sessionId={session.id} userId={auth.user.id} onCompleted={(result) => quizCompleted(session, result)} />
+                </div>
+              ) : session.quizScore != null ? (
+                <div className="d-flex flex-wrap align-items-center gap-2 mt-3 text-success small">
+                  <FiCheckCircle />
+                  <span>Quiz done: {session.quizScore}/{session.quizTotal} · understanding {session.myRating}/5.</span>
+                  <button type="button" className="btn btn-link btn-sm p-0" onClick={() => setOpenQuiz(session.id)}>Review answers</button>
                 </div>
               ) : (
-                <div className="d-flex align-items-center gap-2 mt-3 text-success small">
-                  <FiCheckCircle />
-                  <span>Thanks, you rated this session {session.myRating}/5.</span>
+                <div className="mt-3">
+                  <div className="small fw-semibold mb-2">Check your understanding of this session</div>
+                  <button type="button" className="btn btn-outline-primary btn-sm" onClick={() => setOpenQuiz(session.id)}>
+                    Take the 10-question quiz
+                  </button>
                 </div>
               )}
             </section>

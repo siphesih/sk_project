@@ -3,9 +3,9 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Sep 07, 2026 at 02:52 PM
+-- Generation Time: Oct 27, 2026 at 01:21 PM
 -- Server version: 10.4.32-MariaDB
--- PHP Version: 8.0.30
+-- PHP Version: 8.2.12
 
 SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
 START TRANSACTION;
@@ -57,7 +57,12 @@ CREATE TABLE `attendance` (
   `student_id` varchar(36) NOT NULL,
   `status` enum('present','late','absent') NOT NULL DEFAULT 'present',
   `marked_at` datetime NOT NULL,
-  `lecturer_verified` tinyint(1) DEFAULT 0
+  `lecturer_verified` tinyint(1) DEFAULT 0,
+  `latitude` decimal(9,6) DEFAULT NULL,
+  `longitude` decimal(9,6) DEFAULT NULL,
+  `accuracy_m` int(11) DEFAULT NULL,
+  `distance_m` int(11) DEFAULT NULL,
+  `location_status` enum('verified','outside_radius','no_location','not_checked') NOT NULL DEFAULT 'not_checked'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
@@ -68,7 +73,8 @@ INSERT INTO `attendance` (`id`, `session_id`, `student_id`, `status`, `marked_at
 (1, 's-1', 'student-1', 'present', '2026-07-20 08:03:00', 1),
 (2, 's-3', 'student-1', 'present', '2026-07-21 12:05:00', 1),
 (3, 's-4', 'student-1', 'present', '2026-07-23 09:02:00', 1),
-(4, '4891fc01-efa9-40ee-a34e-ec8ae96c07ac', 'student-1', 'present', '2026-09-02 11:42:26', 0);
+(4, '4891fc01-efa9-40ee-a34e-ec8ae96c07ac', 'student-1', 'present', '2026-09-02 11:42:26', 0),
+(5, '69029fad-31fa-47b6-805f-44aeb35349bf', 'student-1', 'present', '2026-09-25 07:15:08', 0);
 
 -- --------------------------------------------------------
 
@@ -283,8 +289,7 @@ CREATE TABLE `notifications` (
 --
 
 INSERT INTO `notifications` (`id`, `module_id`, `title`, `message`, `created_at`) VALUES
-('1004', 'mod-isj107v', 'Assignment 1 deadline extended', 'The deadline has been extended to 10 March.', '2026-08-12 12:19:35'),
-('4a48aa61-7a46-4cc2-84c8-dbf1b5ff13e5', 'mod-sec117v', 'SEMESTER TEST ONE', 'B10-248', '2026-09-03 07:17:14');
+('5242cda0-7f6e-4820-95fb-ed1d6504f177', 'mod-dtd117v', 'mAKE SURE YOU STUDY', 'tomorrow if the final day of registering for the seminar', '2026-09-25 05:18:33');
 
 -- --------------------------------------------------------
 
@@ -312,6 +317,23 @@ CREATE TABLE `predictions` (
 
 INSERT INTO `predictions` (`id`, `student_id`, `module_id`, `predicted_grade`, `risk_level`, `confidence`, `attendance`, `assignments`, `tests`, `recommendations`, `created_at`) VALUES
 ('pred-001', 'student-1', 'mod-isj107v', 'A', 'low', 81, 100, 88, 78, '[\"Maintain current attendance\", \"Continue submitting assignments on time\"]', '2026-08-12 12:19:35');
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `quiz_attempts`
+--
+
+CREATE TABLE `quiz_attempts` (
+  `session_id` varchar(36) NOT NULL,
+  `student_id` varchar(36) NOT NULL,
+  `answers` longtext NOT NULL,
+  `score` int(11) NOT NULL,
+  `total` int(11) NOT NULL,
+  `submitted_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  PRIMARY KEY (`session_id`,`student_id`),
+  KEY `student_id` (`student_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- --------------------------------------------------------
 
@@ -376,9 +398,13 @@ CREATE TABLE `sessions` (
   `session_date` date NOT NULL,
   `time_slot` varchar(100) DEFAULT NULL,
   `topic` varchar(255) NOT NULL,
+  `description` text DEFAULT NULL,
   `attendance_code` varchar(255) DEFAULT NULL,
   `code_expires_at` datetime DEFAULT NULL,
   `expiry_minutes` int(11) DEFAULT 15,
+  `lecturer_lat` decimal(9,6) DEFAULT NULL,
+  `lecturer_lng` decimal(9,6) DEFAULT NULL,
+  `lecturer_accuracy_m` int(11) DEFAULT NULL,
   `created_at` timestamp NOT NULL DEFAULT current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
@@ -389,10 +415,24 @@ CREATE TABLE `sessions` (
 INSERT INTO `sessions` (`id`, `module_id`, `lecturer_id`, `session_date`, `time_slot`, `topic`, `attendance_code`, `code_expires_at`, `expiry_minutes`, `created_at`) VALUES
 ('3c5fd923-787c-4c5c-b6b5-e5a9c48109d4', 'mod-dbs207v', 'staff-lect-1', '2026-09-02', NULL, 'Data Structures and alghorythems', '23SJMR', '2026-09-02 10:55:48', 3, '2026-09-02 08:52:39'),
 ('4891fc01-efa9-40ee-a34e-ec8ae96c07ac', 'mod-sec117v', 'staff-lect-1', '2026-09-02', NULL, 'Basics', 'Q2VX1X', '2026-09-02 11:59:53', 10, '2026-09-02 09:41:42'),
+('69029fad-31fa-47b6-805f-44aeb35349bf', 'mod-dtd117v', 'staff-lect-1', '2026-09-25', NULL, 'LinkedLists<>', 'MZ4884', '2026-09-25 07:25:53', 10, '2026-09-25 05:13:57'),
 ('s-1', 'mod-isj107v', 'staff-lect-1', '2026-07-20', '08:00–09:30', 'Requirements gathering & scoping', NULL, NULL, 15, '2026-08-12 12:19:35'),
 ('s-2', 'mod-isj107v', 'staff-lect-1', '2026-07-22', '10:00–11:30', 'System integration patterns', NULL, NULL, 15, '2026-08-12 12:19:35'),
 ('s-3', 'mod-sec117v', 'staff-lect-1', '2026-07-21', '12:00–13:30', 'REST vs SOAP services', NULL, NULL, 15, '2026-08-12 12:19:35'),
 ('s-4', 'mod-dtd117v', 'staff-lect-1', '2026-07-23', '09:00–10:30', 'Binary search trees', NULL, NULL, 15, '2026-08-12 12:19:35');
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `session_quizzes`
+--
+
+CREATE TABLE `session_quizzes` (
+  `session_id` varchar(36) NOT NULL,
+  `questions` longtext NOT NULL,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  PRIMARY KEY (`session_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- --------------------------------------------------------
 
@@ -614,7 +654,7 @@ ALTER TABLE `timetable`
 -- AUTO_INCREMENT for table `attendance`
 --
 ALTER TABLE `attendance`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=6;
 
 --
 -- AUTO_INCREMENT for table `enrolments`
@@ -693,31 +733,11 @@ ALTER TABLE `predictions`
   ADD CONSTRAINT `predictions_ibfk_2` FOREIGN KEY (`module_id`) REFERENCES `modules` (`id`) ON DELETE CASCADE;
 
 --
--- Constraints for table `ratings`
---
-ALTER TABLE `ratings`
-  ADD CONSTRAINT `ratings_ibfk_1` FOREIGN KEY (`session_id`) REFERENCES `sessions` (`id`) ON DELETE CASCADE,
-  ADD CONSTRAINT `ratings_ibfk_2` FOREIGN KEY (`student_id`) REFERENCES `students` (`id`) ON DELETE CASCADE;
-
---
 -- Constraints for table `results`
 --
 ALTER TABLE `results`
   ADD CONSTRAINT `results_ibfk_1` FOREIGN KEY (`student_id`) REFERENCES `students` (`id`) ON DELETE CASCADE,
   ADD CONSTRAINT `results_ibfk_2` FOREIGN KEY (`module_id`) REFERENCES `modules` (`id`) ON DELETE CASCADE;
-
---
--- Constraints for table `sessions`
---
-ALTER TABLE `sessions`
-  ADD CONSTRAINT `sessions_ibfk_1` FOREIGN KEY (`module_id`) REFERENCES `modules` (`id`) ON DELETE CASCADE,
-  ADD CONSTRAINT `sessions_ibfk_2` FOREIGN KEY (`lecturer_id`) REFERENCES `staff` (`id`) ON DELETE CASCADE;
-
---
--- Constraints for table `timetable`
---
-ALTER TABLE `timetable`
-  ADD CONSTRAINT `timetable_ibfk_1` FOREIGN KEY (`module_id`) REFERENCES `modules` (`id`) ON DELETE CASCADE;
 COMMIT;
 
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
