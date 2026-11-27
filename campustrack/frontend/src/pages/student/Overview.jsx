@@ -29,8 +29,8 @@ export default function Overview() {
   const normalizedScore = Number.isFinite(score) ? Math.min(100, Math.max(0, score)) : 0
   const riskLevel = String(data?.risk?.level || "").toLowerCase()
   const gaugeColor = riskLevel === "high"
-    ? "#E04646"
-    : riskLevel === "medium" ? "#E58A0B" : "#0FA97A"
+    ? "var(--ct-red)"
+    : riskLevel === "medium" ? "var(--ct-amber)" : "var(--ct-green)"
   const modules = data?.modules || []
 
   return (
@@ -56,7 +56,7 @@ export default function Overview() {
                 <div className="d-flex flex-wrap align-items-center gap-4">
                   <div className="ct-gauge">
                     <svg viewBox="0 0 168 168" role="img" aria-label={`Risk score ${data.risk.score} out of 100`}>
-                      <circle cx="84" cy="84" r="70" fill="none" stroke="#EEF1F7" strokeWidth="14" />
+                      <circle cx="84" cy="84" r="70" fill="none" stroke="var(--ct-line-2)" strokeWidth="14" />
                       <circle
                         cx="84"
                         cy="84"

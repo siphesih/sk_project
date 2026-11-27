@@ -1,6 +1,7 @@
 import React from "react"
 import { Link } from "react-router-dom"
 import { FiActivity, FiArrowRight, FiCheckSquare, FiMessageSquare } from "react-icons/fi"
+import ThemeToggle from "../components/ThemeToggle.jsx"
 
 export default function Home() {
   return (
@@ -11,9 +12,12 @@ export default function Home() {
             <div className="ct-brand-icon">CT</div>
             <span className="ct-brand-name">CampusTrack</span>
           </div>
-          <Link to="/login" className="btn btn-primary btn-sm d-flex align-items-center gap-2">
-            Sign in <FiArrowRight />
-          </Link>
+          <div className="d-flex align-items-center gap-2">
+            <ThemeToggle />
+            <Link to="/login" className="btn btn-primary btn-sm d-flex align-items-center gap-2">
+              Sign in <FiArrowRight />
+            </Link>
+          </div>
         </div>
       </div>
 
@@ -40,8 +44,8 @@ export default function Home() {
               <div className="d-flex flex-wrap align-items-center gap-4">
                 <div className="ct-gauge">
                   <svg viewBox="0 0 168 168" aria-hidden="true">
-                    <circle cx="84" cy="84" r="70" fill="none" stroke="#EEF1F7" strokeWidth="14" />
-                    <circle cx="84" cy="84" r="70" fill="none" stroke="#0FA97A" strokeWidth="14" strokeLinecap="round" strokeDasharray="378.2 439.8" />
+                    <circle cx="84" cy="84" r="70" fill="none" stroke="var(--ct-line-2)" strokeWidth="14" />
+                    <circle cx="84" cy="84" r="70" fill="none" stroke="var(--ct-green)" strokeWidth="14" strokeLinecap="round" strokeDasharray="378.2 439.8" />
                   </svg>
                   <div className="num"><b>86</b><span>out of 100</span></div>
                 </div>

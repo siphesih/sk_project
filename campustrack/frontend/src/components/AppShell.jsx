@@ -2,6 +2,7 @@ import React, { useEffect } from "react"
 import { Link, NavLink, Outlet, useLocation, useNavigate } from "react-router-dom"
 import { FiBell, FiChevronRight, FiLogOut, FiMenu, FiSearch } from "react-icons/fi"
 import { useAuth } from "../context/AuthContext.jsx"
+import ThemeToggle from "./ThemeToggle.jsx"
 
 export default function AppShell({ navItems, roleLabel }) {
   const { auth, signOut } = useAuth()
@@ -89,6 +90,7 @@ export default function AppShell({ navItems, roleLabel }) {
             <input type="search" placeholder="Search..." aria-label="Search" />
           </label>
           <div className="d-flex align-items-center gap-2 ms-auto-m">
+            <ThemeToggle />
             {notificationsPath && (
               <Link to={notificationsPath} className="ct-iconbtn" aria-label="Notifications" title="Notifications">
                 <FiBell />

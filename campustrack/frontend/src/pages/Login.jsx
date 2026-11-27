@@ -7,6 +7,7 @@ import {
   FiCheckCircle
 } from "react-icons/fi"
 import { useAuth } from "../context/AuthContext.jsx"
+import ThemeToggle from "../components/ThemeToggle.jsx"
 
 export default function Login() {
   const [tab, setTab] = useState("student")
@@ -192,6 +193,9 @@ export default function Login() {
           <div className="d-flex align-items-center gap-2 mb-4 d-lg-none">
             <div className="ct-brand-icon">CT</div>
             <span className="ct-brand-name">CampusTrack</span>
+          </div>
+          <div className="d-flex justify-content-end mb-3">
+            <ThemeToggle />
           </div>
           <h1 className="fw-bold fs-3 mb-1">Welcome back</h1>
           <p className="text-muted mb-4">Sign in to continue to your dashboard.</p>
