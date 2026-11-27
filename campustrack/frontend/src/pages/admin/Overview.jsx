@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react"
-import { FiUsers, FiUser, FiBookOpen } from "react-icons/fi"
+import { Link } from "react-router-dom"
+import { FiBookOpen, FiArrowRight, FiUser, FiUsers } from "react-icons/fi"
 import { useAuth } from "../../context/AuthContext.jsx"
 
 const fetchJson = async (path, { method = "GET", body } = {}) => {
@@ -29,30 +30,60 @@ export default function Overview() {
   }, [])
 
   const cards = [
-    { label: "Students", value: counts?.students, icon: FiUsers, color: "primary" },
-    { label: "Lecturers", value: counts?.lecturers, icon: FiUser, color: "success" },
-    { label: "Modules", value: counts?.modules, icon: FiBookOpen, color: "warning" },
+    { label: "Students", value: counts?.students, icon: FiUsers, color: "bg-soft-primary", to: "/admin/users" },
+    { label: "Lecturers", value: counts?.lecturers, icon: FiUser, color: "bg-soft-green", to: "/admin/users" },
+    { label: "Modules", value: counts?.modules, icon: FiBookOpen, color: "bg-soft-amber", to: "/admin/modules" },
   ]
 
   return (
     <div>
-      <h4 className="fw-bold mb-1">Welcome back, {auth.user.name}.</h4>
-      <p className="text-muted mb-4">Set up lecturers, students and modules for the pilot.</p>
+      <div className="ct-page-head">
+        <div>
+          <h1>Welcome back, {auth.user.name}</h1>
+          <p>Set up lecturers, students and modules for the pilot.</p>
+        </div>
+        <Link to="/admin/users" className="btn btn-primary d-inline-flex align-items-center gap-2">
+          Add a user <FiArrowRight />
+        </Link>
+      </div>
 
       {error && <div className="alert alert-danger mb-4">{error}</div>}
 
       <div className="row g-4">
-        {cards.map((c) => (
-          <div className="col-md-4" key={c.label}>
-            <div className="card p-4 d-flex flex-row align-items-center gap-3">
-              <div className={`ct-stat-icon bg-${c.color} bg-opacity-10`}><c.icon className={`text-${c.color}`} /></div>
-              <div>
-                <div className="fs-4 fw-bold">{c.value ?? "–"}</div>
-                <div className="text-muted small">{c.label}</div>
+        {cards.map((card) => (
+          <div className="col-md-4" key={card.label}>
+            <Link to={card.to} className="text-decoration-none text-reset d-block h-100">
+              <div className="card ct-kpi">
+                <div className="top"><div className={`ct-stat-icon ${card.color}`}><card.icon /></div></div>
+                <div className="val">{card.value ?? "–"}</div>
+                <div className="lab">{card.label}</div>
               </div>
-            </div>
+            </Link>
           </div>
         ))}
+      </div>
+
+      <div className="row g-4 mt-1">
+        <div className="col-md-6">
+          <Link to="/admin/users" className="ct-step h-100">
+            <div className="no">1</div>
+            <div className="grow">
+              <div className="fw-semibold">Manage users</div>
+              <div className="text-muted small">Onboard students and lecturers for the pilot.</div>
+            </div>
+            <FiArrowRight />
+          </Link>
+        </div>
+        <div className="col-md-6">
+          <Link to="/admin/modules" className="ct-step h-100">
+            <div className="no">2</div>
+            <div className="grow">
+              <div className="fw-semibold">Set up modules</div>
+              <div className="text-muted small">Create modules and assign lecturers.</div>
+            </div>
+            <FiArrowRight />
+          </Link>
+        </div>
       </div>
     </div>
   )

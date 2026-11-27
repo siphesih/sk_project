@@ -9,7 +9,7 @@ const navItems = [
   { to: "/student/results", label: "Results", icon: FiAward },
   { to: "/student/notifications", label: "Notifications", icon: FiBell },
   { to: "/student/attendance", label: "Mark attendance", icon: FiCheckSquare },
-  { to: "/student/ratings", label: "Session quizzes", icon: FiStar },
+  { to: "/student/ratings", label: "Rate sessions", icon: FiStar },
   { to: "/student/assistant", label: "Assistant", icon: FiMessageSquare },
 ]
 
